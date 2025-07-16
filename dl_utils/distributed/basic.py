@@ -59,6 +59,16 @@ def barrier_if_distributed(*args, **kwargs):
         return dist.barrier(*args, **kwargs)
 
 
+def dist_breakpoint(rank: int = 0):
+    """
+    Breakpoint for distributed training.
+    """
+    assert 0 <= rank < get_world_size(), f"Invalid rank {rank}, world size: {get_world_size()}."
+    if get_local_rank() == rank:
+        breakpoint()
+    barrier_if_distributed()
+
+
 __all__ = [
     "get_global_rank",
     "get_local_rank",
@@ -67,4 +77,5 @@ __all__ = [
     "get_master_addr",
     "get_master_port",
     "barrier_if_distributed",
+    "dist_breakpoint"
 ]
