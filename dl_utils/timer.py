@@ -2,8 +2,7 @@
 # @Time    : 2022/10/11 13:41
 # @Author  : Yaojie Shen
 # @Project : Deep-Learning-Utils
-# @File    : _time.py
-
+# @File    : timer.py
 
 import datetime
 import time
@@ -11,8 +10,6 @@ from collections import defaultdict
 
 import torch
 from tabulate import tabulate
-
-__all__ = ["get_timestamp", "Timer"]
 
 
 def get_timestamp():
@@ -33,7 +30,7 @@ class Timer:
         self._time = self._get_time()
 
     def _get_time(self):
-        return round(dl_utils.time.time.time() * 1000, self._precision)
+        return round(time.time() * 1000, self._precision)
 
     def __call__(self, stage_name=None, reset=True):
         if self._synchronize:
@@ -71,3 +68,6 @@ class Timer:
     def print(self):
         data = [[k, round(sum(v) / len(v), self._precision)] for k, v in self._time_history.items()]
         print(tabulate(data, headers=["Stage", "Time (ms)"], tablefmt="simple"))
+
+
+__all__ = ["get_timestamp", "Timer"]

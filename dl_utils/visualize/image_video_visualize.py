@@ -4,8 +4,6 @@
 # @Project : Deep-Learning-Utils
 # @File    : image_video_visualize.py
 
-__all__ = ["visualize_image", "visualize_video", "inv_normalize"]
-
 import os
 
 import matplotlib.pyplot as plt
@@ -93,3 +91,6 @@ def inv_normalize(image_or_video, mean, std):
     data = _convert_to_torch_tensor(image_or_video)
     data = normalize(data, mean=[-m / s for m, s in zip(mean, std)], std=[1 / s for s in std])
     return data.numpy()
+
+
+__all__ = ["visualize_image", "visualize_video", "inv_normalize"]

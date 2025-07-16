@@ -1,22 +1,16 @@
 # -*- coding: utf-8 -*-
-# @Time    : 2022/9/25 18:52
+# @Time    : 7/16/25
 # @Author  : Yaojie Shen
 # @Project : Deep-Learning-Utils
 # @File    : __init__.py
 
 from typing import TYPE_CHECKING
 
-from .import_utils import _LazyModule, define_import_structure
+from ..import_utils import _LazyModule, define_import_structure
 
 if TYPE_CHECKING:
-    from .data import *
-    from .distributed import *
-    from .fs import *
-    from .visualize import *
-
-    from .decorators import *
-    from .prefetcher import *
-    from .timer import *
+    from .gather import *
+    from .basic import *
 else:
     import sys
 

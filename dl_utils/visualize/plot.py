@@ -4,8 +4,6 @@
 # @Project : Deep-Learning-Utils
 # @File    : plot.py
 
-__all__ = ["plot_distribution"]
-
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -21,3 +19,6 @@ def plot_distribution(data, remove_outlier=False, percent_range=(0.1, 99.9)):
     ax.violinplot(data, vert=False, showmeans=False, showmedians=False, showextrema=False, points=200)
     ax.set_ylim(1)
     fig.show()
+
+
+__all__ = ["plot_distribution"]
