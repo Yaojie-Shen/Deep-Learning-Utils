@@ -7,8 +7,6 @@
 import logging
 from typing import Callable
 
-from .distributed import barrier_if_distributed
-
 logger = logging.getLogger(__name__)
 
 
@@ -29,6 +27,7 @@ def barrier_on_entry(func: Callable) -> Callable:
     """
     Functions with this decorator will start executing when all ranks are ready to enter.
     """
+    from .distributed.basic import barrier_if_distributed
 
     def barrier_on_entry_wrapper(*args, **kwargs):
         barrier_if_distributed()
