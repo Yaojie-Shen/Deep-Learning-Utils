@@ -4,6 +4,15 @@
 # @Project : Deep-Learning-Utils
 # @File    : __init__.py
 
-__all__ = ["cuda", "data", "parallel", "time", "visualize"]
+from typing import TYPE_CHECKING
 
-from . import cuda, data, parallel, time, visualize
+from .import_utils import _LazyModule, define_import_structure
+
+if TYPE_CHECKING:
+    from dl_utils.list_files import *
+    from .visualize import *
+else:
+    import sys
+
+    _file = globals()["__file__"]
+    sys.modules[__name__] = _LazyModule(__name__, _file, define_import_structure(_file), module_spec=__spec__)
