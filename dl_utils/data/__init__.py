@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from .image import *
     from .json import *
     from .lmdb import *
+    from .pickle import *
     from .video import *
 else:
     import sys
