@@ -41,33 +41,67 @@ def save_video(frames: ArrayLike, save_path: FilePath, fps: Union[int, float] = 
     out.release()
 
 
-def _get_single_video_duration_info(video_path) -> (float, float, int):
+def get_video_fps(video_path: FilePath) -> float:
     """
-    return video duration in seconds
-    :param video_path: video path
-    :return: video duration, fps, frame count
+    Retrieve the FPS of a video.
+
+    Args:
+        video_path: Path to the video file.
+
+    Returns:
+        The FPS of the video.
     """
     import cv2
     video = cv2.VideoCapture(video_path)
-
     fps = video.get(cv2.CAP_PROP_FPS)
+    return fps
+
+
+def get_video_frame_count(video_path: FilePath) -> int:
+    """
+    Retrieve the total number of frames in a video.
+
+    Args:
+        video_path: Path to the video file.
+
+    Returns:
+        The number of frames in the video.
+    """
+    import cv2
+    video = cv2.VideoCapture(video_path)
     frame_count = video.get(cv2.CAP_PROP_FRAME_COUNT)
+    return int(frame_count)
 
-    return frame_count / fps, fps, int(frame_count)
 
-
-def get_duration_info(video_paths: Union[str, Iterable]) -> (float, float, int):
+def get_video_duration(video_path: FilePath) -> Tuple[float, int, float]:
     """
+    Retrieve the FPS, frame count, and duration (in seconds) of a video.
 
-    :param video_paths: video path or a list of video path
-    :return: video duration, fps, frame count
+    Args:
+        video_path: Path to the video file.
+    Returns:
+        A tuple containing FPS, frame count, and duration in seconds.
     """
-    if isinstance(video_paths, str):
-        return _get_single_video_duration_info(video_paths)
-    else:
-        return Parallel(n_jobs=os.cpu_count())(
-            delayed(_get_single_video_duration_info)(path) for path in video_paths
-        )
+    import cv2
+    video = cv2.VideoCapture(video_path)
+    fps = video.get(cv2.CAP_PROP_FPS)
+    frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
+    return fps, frame_count, frame_count / fps
+
+
+def get_video_duration_batch(video_paths: List[FilePath]) -> List[float]:
+    """
+    Get duration of videos in batch.
+
+    Args:
+        video_paths: List of paths to videos.
+
+    Returns:
+        A list of tuples, each containing FPS, frame count, and duration in seconds.
+    """
+    return Parallel(n_jobs=os.cpu_count())(
+        delayed(get_video_duration)(p) for p in video_paths
+    )
 
 
 def convert_to_h265(input_file: AnyStr, output_file: AnyStr,
@@ -133,7 +167,10 @@ def convert_to_h264(input_file: AnyStr, output_file: AnyStr,
 
 __all__ = [
     "save_video",
-    "get_duration_info",
+    "get_video_fps",
+    "get_video_frame_count",
+    "get_video_duration",
+    "get_video_duration_batch",
     "convert_to_h265",
     "convert_to_h264"
 ]
