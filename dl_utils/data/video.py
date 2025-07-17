@@ -4,13 +4,41 @@
 # @Project : Deep-Learning-Utils
 # @File    : video.py
 
-__all__ = ["get_duration_info", "convert_to_h265", "convert_to_h264"]
-
 import os
 import subprocess
 from typing import *
 
 from joblib import Parallel, delayed
+
+from .array import to_numpy
+from .. import make_parent_dirs
+from ..type_hint import FilePath, ArrayLike
+
+
+def save_video(frames: ArrayLike, save_path: FilePath, fps: Union[int, float] = 30):
+    """
+
+    Args:
+        frames: Video frames in shape (F, H, W, C). The pix
+        save_path: Path to save video.
+        fps: FPS of video, default 30.
+    """
+    try:
+        import cv2
+    except ImportError:
+        raise ImportError("opencv-python is required to save video")
+
+    frames = to_numpy(frames)
+
+    height, width = frames.shape[1:3]
+
+    make_parent_dirs(save_path)
+
+    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    out = cv2.VideoWriter(save_path, fourcc, fps, (width, height))
+    for frame in frames:
+        out.write(frame)
+    out.release()
 
 
 def _get_single_video_duration_info(video_path) -> (float, float, int):
@@ -19,7 +47,6 @@ def _get_single_video_duration_info(video_path) -> (float, float, int):
     :param video_path: video path
     :return: video duration, fps, frame count
     """
-
     import cv2
     video = cv2.VideoCapture(video_path)
 
@@ -102,3 +129,11 @@ def convert_to_h264(input_file: AnyStr, output_file: AnyStr,
                    stderr=subprocess.DEVNULL if not verbose else None,
                    stdout=subprocess.DEVNULL if not verbose else None)
     # TODO: return
+
+
+__all__ = [
+    "save_video",
+    "get_duration_info",
+    "convert_to_h265",
+    "convert_to_h264"
+]

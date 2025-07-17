@@ -10,6 +10,7 @@ from ..import_utils import _LazyModule, define_import_structure
 
 if TYPE_CHECKING:
     from .list_files import *
+    from .dir import *
 else:
     import sys
 

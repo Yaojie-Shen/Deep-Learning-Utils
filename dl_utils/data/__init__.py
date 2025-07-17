@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from ..import_utils import _LazyModule, define_import_structure
 
 if TYPE_CHECKING:
+    from .array import *
     from .image import *
     from .json import *
     from .lmdb import *
