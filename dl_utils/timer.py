@@ -18,6 +18,10 @@ def get_timestamp():
     return "{0:%Y-%m-%dT%H-%M-%SW}".format(datetime.datetime.now())
 
 
+def get_readable_timestamp():
+    return "{:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now())
+
+
 def get_current_time_in_ms(precision: int) -> float:
     """Return the current time in milliseconds."""
     return round(time.time() * 1000, precision)
@@ -47,11 +51,20 @@ class Timer:
 
 class ExecutionTimer(Timer):
 
-    def __init__(self, history_size=None, precision=2):
+    def __init__(
+            self, history_size=None, precision=2,
+            start_prompt: str = None, end_prompt: str = None, log: bool = False
+    ):
         super().__init__(precision=precision)
 
         self._stage_name = None
         self._stage_log = defaultdict(lambda: deque(maxlen=history_size))
+
+        self._enable_log = log
+        self._start_log_prompt = \
+            "({ctime}) => Starting stage: {stage}..." if start_prompt is None else start_prompt
+        self._end_log_prompt = \
+            "({ctime}) => Finished stage: {stage} | Took {duration:.3f} ms." if end_prompt is None else end_prompt
 
     @contextmanager
     def stage(self, name: str):
@@ -89,6 +102,9 @@ class ExecutionTimer(Timer):
         self._stage_name = name
         self.reset()
 
+        if self._enable_log and name is not None:
+            print(self._start_log_prompt.format(ctime=get_readable_timestamp(), stage=self._stage_name))
+
     def end_stage(self, name: Optional[str] = None):
         """
         Log the end of a stage.
@@ -111,6 +127,9 @@ class ExecutionTimer(Timer):
         duration = self.get_duration_and_reset()
         self._stage_log[name].append(duration)
         self._stage_name = None
+
+        if self._enable_log:
+            print(self._end_log_prompt.format(ctime=get_readable_timestamp(), stage=name, duration=duration))
 
     def __str__(self):
         out = ""
@@ -143,4 +162,4 @@ class ExecutionTimer(Timer):
         ))
 
 
-__all__ = ["get_timestamp", "Timer", "ExecutionTimer"]
+__all__ = ["get_timestamp", "get_readable_timestamp", "Timer", "ExecutionTimer"]

@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from pytest import mark
 
-from dl_utils import get_duration_info, save_video
+from dl_utils import get_video_duration_batch, save_video
 
 
 def test_save_video():
@@ -31,6 +31,6 @@ def test_get_duration_info(video_root):
 
     # single
     print("single:")
-    print(get_duration_info(videos[0]))
+    print(get_video_duration_batch(videos[0]))
     print("batch:")
-    print(get_duration_info(videos[:10]))
+    print(get_video_duration_batch(videos[:10]))
