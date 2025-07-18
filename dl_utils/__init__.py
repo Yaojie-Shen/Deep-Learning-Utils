@@ -16,6 +16,7 @@ if TYPE_CHECKING:
 
     from .decorators import *
     from .prefetcher import *
+    from .qps_control import *
     from .timer import *
     from .type_hint import *
 else:
