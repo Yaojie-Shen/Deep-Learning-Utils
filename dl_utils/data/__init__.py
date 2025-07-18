@@ -14,6 +14,7 @@ if TYPE_CHECKING:
     from .json import *
     from .lmdb import *
     from .pickle import *
+    from .text import *
     from .video import *
 else:
     import sys
