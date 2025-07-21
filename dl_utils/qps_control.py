@@ -37,6 +37,16 @@ class QPSLimiter:
         self.refill_task = asyncio.create_task(self._refill_tokens())  # Refill token in background
         self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=max_concurrent)
 
+        self.start_time = time.time()
+        self.end_time = None
+        self.query_count = 0
+
+    def real_qps(self) -> float:
+        """Return the real QPS based on the query count and time."""
+        if self.end_time is None:
+            return self.query_count / (time.time() - self.start_time)
+        return self.query_count / (self.end_time - self.start_time)
+
     async def _refill_tokens(self):
         """Refill token"""
         s_time = time.time()
@@ -59,6 +69,7 @@ class QPSLimiter:
             await self.refill_task
         except asyncio.CancelledError:
             pass
+        self.end_time = time.time()
 
     async def run(self, func: Callable, *args) -> dict[str, Any]:
         if not self.running:
@@ -69,6 +80,7 @@ class QPSLimiter:
                 async with self.lock:
                     if self.tokens > 0:
                         self.tokens -= 1
+                        self.query_count += 1
                         break
                 await asyncio.sleep(0.0001)  # Wait for token
 

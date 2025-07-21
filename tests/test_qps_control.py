@@ -55,7 +55,9 @@ def test_qps_limiter_performance():
         real_qps = counter / test_sec
 
         print(f"Performance: {real_qps:.2f} qps")
+        print(f"Real QPS: {qps_limiter.real_qps():.2f} qps")
         assert real_qps == approx(max_qps, rel=0.1)
+        assert real_qps == approx(qps_limiter.real_qps(), rel=0.1)
 
     asyncio.run(main())
 
