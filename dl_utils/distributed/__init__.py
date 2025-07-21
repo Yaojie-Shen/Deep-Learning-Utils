@@ -9,8 +9,9 @@ from typing import TYPE_CHECKING
 from ..import_utils import _LazyModule, define_import_structure
 
 if TYPE_CHECKING:
-    from .gather import *
     from .basic import *
+    from .breakpoint import *
+    from .gather import *
 else:
     import sys
 
