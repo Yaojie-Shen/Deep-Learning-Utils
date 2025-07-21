@@ -8,11 +8,18 @@ from os import PathLike
 from pathlib import Path
 from typing import Union
 
-import numpy as np
-import torch
+try:
+    import numpy as np
+except ImportError:
+    np = None
+
+try:
+    import torch
+except ImportError:
+    torch = None
 
 FilePath = Union[str, PathLike[str], Path]
 
-ArrayLike = Union[np.ndarray, torch.Tensor]
+ArrayLike = Union["np.ndarray", "torch.Tensor"]
 
 __all__ = ["FilePath", "ArrayLike"]
