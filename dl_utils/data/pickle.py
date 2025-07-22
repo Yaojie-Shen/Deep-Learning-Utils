@@ -7,7 +7,7 @@
 import pickle
 
 
-def save_pickle(file, obj):
+def save_pickle(obj, file):
     with open(file, 'wb') as fp:
         pickle.dump(obj, fp)
 
