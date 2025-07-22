@@ -4,7 +4,7 @@
 # @Project : Deep-Learning-Utils
 # @File    : test_video.py
 
-import os
+import time
 
 import numpy as np
 import torch
@@ -21,16 +21,19 @@ def test_save_video():
 
 
 @mark.parametrize(
-    "video_root", [
-        # the folder contains test videos
-        ""
+    "video", [
+        "test_output/test_save_video_numpy.mp4",
+        "test_output/test_save_video_torch.mp4"
     ]
 )
-def test_get_duration_info(video_root):
-    videos = [os.path.join(video_root, f) for f in os.listdir(video_root)]
-
+def test_get_duration_info(video):
     # single
-    print("single:")
-    print(get_video_duration_batch(videos[0]))
-    print("batch:")
-    print(get_video_duration_batch(videos[:10]))
+    s_time = time.time()
+    for _ in range(10):
+        print(get_video_duration_batch([video]))
+    print(f"Sequential took {time.time() - s_time}s | {10 / (time.time() - s_time)} s/video")
+
+    # parallel
+    s_time = time.time()
+    print(get_video_duration_batch([video] * 10))
+    print(f"Parallel took {time.time() - s_time}s")

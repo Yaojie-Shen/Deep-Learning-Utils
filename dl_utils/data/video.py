@@ -15,13 +15,19 @@ from .. import make_parent_dirs
 from ..type_hint import FilePath, ArrayLike
 
 
-def save_video(frames: ArrayLike, save_path: FilePath, fps: Union[int, float] = 30):
+def save_video(
+        frames: ArrayLike,
+        save_path: FilePath,
+        fps: Union[int, float] = 30,
+        codec: str = "avc1"
+):
     """
 
     Args:
         frames: Video frames in shape (F, H, W, C). The pix
         save_path: Path to save video.
         fps: FPS of video, default 30.
+        codec: Codec of video, default avc1.
     """
     try:
         import cv2
@@ -34,7 +40,7 @@ def save_video(frames: ArrayLike, save_path: FilePath, fps: Union[int, float] = 
 
     make_parent_dirs(save_path)
 
-    fourcc = cv2.VideoWriter_fourcc(*'mp4v')
+    fourcc = cv2.VideoWriter_fourcc(*codec)
     out = cv2.VideoWriter(save_path, fourcc, fps, (width, height))
     for frame in frames:
         out.write(frame)
