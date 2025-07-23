@@ -59,6 +59,16 @@ def barrier_if_distributed(*args, **kwargs):
         return dist.barrier(*args, **kwargs)
 
 
+def rank0() -> bool:
+    """Global rank 0"""
+    return get_global_rank() == 0
+
+
+def local_rank0() -> bool:
+    """Local rank 0 (of each node)"""
+    return get_local_rank() == 0
+
+
 __all__ = [
     "get_global_rank",
     "get_local_rank",
@@ -67,4 +77,6 @@ __all__ = [
     "get_master_addr",
     "get_master_port",
     "barrier_if_distributed",
+    "rank0",
+    "local_rank0",
 ]
