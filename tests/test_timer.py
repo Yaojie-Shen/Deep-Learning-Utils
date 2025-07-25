@@ -5,7 +5,7 @@
 # @File    : test_timer.py
 
 import time
-
+from pytest import mark, param
 from dl_utils import get_timestamp, get_readable_timestamp, ExecutionTimer
 
 
@@ -17,8 +17,13 @@ def test_get_readable_timestamp():
     print(get_readable_timestamp())
 
 
-def test_timer():
-    timer = ExecutionTimer(log=True)
+@mark.parametrize("precision", [
+    param(0, id="precision=0"),
+    param(1, id="precision=1"),
+    param(2, id="precision=-1"),
+])
+def test_timer(precision):
+    timer = ExecutionTimer(log=True, precision=precision)
 
     print()
 

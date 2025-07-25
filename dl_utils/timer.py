@@ -29,6 +29,7 @@ def get_current_time_in_ms(precision: int) -> float:
 
 class Timer:
     def __init__(self, precision=3):
+        assert precision >= 0, "precision must be greater than or equal to 0"
         self._precision = precision
         self._start_time = self.get_current_time_in_ms()
 
@@ -158,7 +159,7 @@ class ExecutionTimer(Timer):
         print(tabulate(
             data,
             headers=["Stage", "Total (ms)", "Count", "Min (ms)", "Max (ms)", "Avg (ms)"],
-            tablefmt="simple"
+            tablefmt="simple", floatfmt=f".0{self._precision}f",
         ))
 
 
