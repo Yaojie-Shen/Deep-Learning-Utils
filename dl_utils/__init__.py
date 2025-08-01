@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from .visualize import *
 
     from .decorators import *
+    from .inspect_data_utils import *
     from .prefetcher import *
     from .qps_control import *
     from .timer import *

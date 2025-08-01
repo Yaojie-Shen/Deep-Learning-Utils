@@ -20,7 +20,8 @@ dependencies = [
     "opencv-python",
     "torch",
     "tabulate",
-    "lmdbm"
+    "lmdbm",
+    "pandas",
 ]
 
 [project.optional-dependencies]
@@ -30,6 +31,7 @@ test = ["pytest"]
 source_code = "https://github.com/yaojie-shen/Deep-Learning-Utils"
 
 [project.scripts]
+inspect_data = "dl_utils.inspect_data_utils:main"
 
 [build-system]
 requires = ["setuptools>=42", "wheel"]
