@@ -69,6 +69,30 @@ def local_rank0() -> bool:
     return get_local_rank() == 0
 
 
+def rank0_print(*args, **kwargs):
+    """Print only on rank 0"""
+    if rank0():
+        print(*args, **kwargs)
+
+
+def rank0_log(fn, *args, **kwargs):
+    """Log only on rank 0."""
+    if rank0():
+        fn(*args, **kwargs)
+
+
+def rank0_wrapper(fn):
+    """
+    Wrap any function to only run on rank 0.
+    """
+
+    def wrapper(*args, **kwargs):
+        if rank0():
+            return fn(*args, **kwargs)
+
+    return wrapper
+
+
 __all__ = [
     "get_global_rank",
     "get_local_rank",
@@ -79,4 +103,7 @@ __all__ = [
     "barrier_if_distributed",
     "rank0",
     "local_rank0",
+    "rank0_print",
+    "rank0_log",
+    "rank0_wrapper",
 ]
