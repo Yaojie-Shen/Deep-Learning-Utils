@@ -140,7 +140,7 @@ def _inspect_node(
             ("\n  values: ", "dim"),
             (str(preview), "green" if data.numel() <= 5 else "green bold"),
             (" ..." if data.numel() > 5 else "", "dim"),
-            (f"\n  std: {data.std():5.2e} mean: {data.mean():5.2e}", "dim"),
+            (f"\n  std: {data.float().std():5.2e} mean: {data.float().mean():5.2e}", "dim"),
             (f" min: {data.min():5.2e} max: {data.max():5.2e}", "dim"),
         )
         return Tree(text)
