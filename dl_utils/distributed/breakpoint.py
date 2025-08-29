@@ -84,7 +84,6 @@ def dist_breakpoint(rank: int = 0):
     Enter the breakpoint only if the current rank is `rank`, and block all other processes using distributed barrier.
     """
     assert 0 <= rank < get_world_size(), f"Invalid rank {rank}, world size: {get_world_size()}."
-    print("Enter new breakpoint fn")
     hh = 1
     if get_local_rank() == rank:
         _my_embed(stack_depth=3)
