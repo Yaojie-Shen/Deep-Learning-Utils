@@ -220,6 +220,25 @@ def main() -> None:
         print(f"❌ Failed to load file: {e}")
         exit(1)
 
+    # This function is for interactive mode
+    def save_as(new_file_path: str):
+        if args.format == "torch" or (args.format == "auto" and file_ext in ['.pt', '.pth']):
+            torch.save(data, new_file_path)
+        elif args.format == "csv" or (args.format == "auto" and file_ext == '.csv'):
+            data.to_csv(new_file_path, index=False)
+        elif args.format == "json" or (args.format == "auto" and file_ext == '.json'):
+            with open(new_file_path, 'w') as f:
+                json.dump(data, f, indent=4)
+        elif args.format == "pkl" or (args.format == "auto" and file_ext in ['.pkl', '.pickle']):
+            with open(new_file_path, 'wb') as f:
+                pickle.dump(data, f)
+        else:
+            raise RuntimeError()
+
+    # This function is for interactive mode
+    def save():
+        save_as(file_path)
+
     if not args.interactive:
         print(f"\n📦 Inspecting file: {file_path}\n")
         inspect_data(
@@ -232,8 +251,20 @@ def main() -> None:
     else:
         try:
             from IPython import embed
-            print("\n🔍 Entering IPython shell. You can explore the variable `data`.")
-            embed()
+
+            embed(
+                header="🔍 Entering IPython shell. You can explore the variable `data`.\n"
+                       "\n"
+                       "Basic Usage:\n"
+                       "  - `data` to access the loaded data\n"
+                       "  - `inspect_data(data)` to inspect the data structure\n"
+                       "  - `exit()` to exit the shell\n"
+                       "\n"
+                       "Modifying Data:\n"
+                       "  - Edit the `data` variable in the shell to modify the data\n"
+                       "  - `save()` to save the modified data back to the file\n"
+                       "  - `save_as('new_file_path')` to save the modified data to a new file\n"
+            )
         except ImportError:
             print("❌ IPython not installed. Run `pip install ipython` to use interactive mode.")
 
