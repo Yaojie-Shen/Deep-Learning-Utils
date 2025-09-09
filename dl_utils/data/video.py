@@ -24,7 +24,7 @@ def save_video(
     """
 
     Args:
-        frames: Video frames in shape (F, H, W, C). The pix
+        frames: Video frames in shape (F, H, W, C). The pixel values should be in range [0, 255].
         save_path: Path to save video.
         fps: FPS of video, default 30.
         codec: Codec of video, default avc1.
