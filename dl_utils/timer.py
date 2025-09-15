@@ -161,6 +161,9 @@ class ExecutionTimer(Timer):
             headers=["Stage", "Total (ms)", "Count", "Min (ms)", "Max (ms)", "Avg (ms)"],
             tablefmt="simple", floatfmt=f".0{self._precision}f",
         ))
+        print("-" * 25)
+        total_time = sum(v["total"] for v in self.summary().values())
+        print(f"Total Time: {total_time:.{self._precision}f} ms")
 
 
 __all__ = ["get_timestamp", "get_readable_timestamp", "Timer", "ExecutionTimer"]

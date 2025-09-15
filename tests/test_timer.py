@@ -5,7 +5,9 @@
 # @File    : test_timer.py
 
 import time
+
 from pytest import mark, param
+
 from dl_utils import get_timestamp, get_readable_timestamp, ExecutionTimer
 
 
@@ -20,14 +22,14 @@ def test_get_readable_timestamp():
 @mark.parametrize("precision", [
     param(0, id="precision=0"),
     param(1, id="precision=1"),
-    param(2, id="precision=-1"),
+    param(2, id="precision=2"),
 ])
 def test_timer(precision):
     timer = ExecutionTimer(log=True, precision=precision)
 
     print()
 
-    with timer.stage("All"):
+    with timer.stage("All stages"):  # Nested
         timer.start_stage("Stage 1")
         time.sleep(0.1)
         timer.end_stage("Stage 1")
