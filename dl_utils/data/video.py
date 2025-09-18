@@ -8,6 +8,8 @@ import os
 import subprocess
 from typing import *
 
+import cv2
+import numpy as np
 from joblib import Parallel, delayed
 
 from .array import to_numpy
@@ -29,11 +31,6 @@ def save_video(
         fps: FPS of video, default 30.
         codec: Codec of video, default avc1.
     """
-    try:
-        import cv2
-    except ImportError:
-        raise ImportError("opencv-python is required to save video")
-
     frames = to_numpy(frames)
 
     height, width = frames.shape[1:3]
@@ -45,6 +42,75 @@ def save_video(
     for frame in frames:
         out.write(frame)
     out.release()
+
+
+def load_video(
+        video_path: FilePath,
+        resize: Union[Tuple[int, int], int] = None,
+        center_crop: Union[Tuple[int, int], int] = None,
+        max_frames: int = None,
+) -> np.ndarray:
+    """
+    Load a video file.
+
+    Args:
+        video_path: Path to the video file.
+        resize: Resize frames to the specified size. If None, no resizing. Accepts (width, height) or int.
+        center_crop: Center crop frames to the specified size. If None, no cropping. Accepts (width, height) or int.
+        max_frames: Maximum number of frames to load. If None, load all frames.
+
+    Returns:
+        Frames as a NumPy array with shape (F, H, W, C). Pixel values are in [0, 255], color order is RGB.
+
+    Note:
+        - If the video is grayscale, the color channel will be replicated to 3.
+    """
+    cap = cv2.VideoCapture(video_path)
+    frames = []
+
+    count = 0
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            break
+
+        if len(frame.shape) == 2:  # Grayscale
+            frame = cv2.cvtColor(frame, cv2.COLOR_GRAY2RGB)
+        else:
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
+        h, w, _ = frame.shape
+
+        if resize is not None:
+            if isinstance(resize, int):
+                # Resize by short edge
+                if h > w:
+                    frame = cv2.resize(frame, (512, int(512 * h / w)))
+                else:
+                    frame = cv2.resize(frame, (int(512 * w / h), 512))
+            elif isinstance(resize, tuple) or isinstance(resize, list):
+                frame = cv2.resize(frame, resize)
+            else:
+                raise ValueError(f"Invalid resize value: {resize}, expected int or tuple/list of two.")
+
+        # Center crop
+        if center_crop is not None:
+            if isinstance(center_crop, int):
+                frame = frame[h // 2 - center_crop // 2:h // 2 + center_crop // 2,
+                        w // 2 - center_crop // 2:w // 2 + center_crop // 2]
+            elif isinstance(center_crop, tuple) or isinstance(center_crop, list):
+                frame = frame[h // 2 - center_crop[1] // 2:h // 2 + center_crop[1] // 2,
+                        w // 2 - center_crop[0] // 2:w // 2 + center_crop[0] // 2]
+            else:
+                raise ValueError(f"Invalid center_crop value: {center_crop}, expected int or tuple/list of two.")
+
+        frames.append(frame)
+        count += 1
+        if max_frames is not None and count >= max_frames:
+            break
+    cap.release()
+
+    return np.stack(frames)  # (f,h,w,c)
 
 
 def get_video_fps(video_path: FilePath) -> float:
@@ -173,6 +239,7 @@ def convert_to_h264(input_file: AnyStr, output_file: AnyStr,
 
 __all__ = [
     "save_video",
+    "load_video",
     "get_video_fps",
     "get_video_frame_count",
     "get_video_duration",

@@ -5,12 +5,13 @@
 # @File    : test_video.py
 
 import time
+from unittest.mock import MagicMock, patch
 
 import numpy as np
 import torch
-from pytest import mark
+from pytest import mark, fixture
 
-from dl_utils import get_video_duration_batch, save_video
+from dl_utils import get_video_duration_batch, save_video, load_video
 
 
 def test_save_video():
@@ -37,3 +38,28 @@ def test_get_duration_info(video):
     s_time = time.time()
     print(get_video_duration_batch([video] * 10))
     print(f"Parallel took {time.time() - s_time}s")
+
+
+@fixture
+def mock_videocap():
+    fake_frame = np.ones((7, 11, 3), dtype=np.uint8) * 255
+    mock_instance = MagicMock()
+    mock_instance.read.side_effect = [(True, fake_frame)] * 10 + [(False, None)]
+
+    with patch("cv2.VideoCapture", return_value=mock_instance):
+        yield
+
+
+def test_load_video_mocked(mock_videocap):
+    frames = load_video("dummy.mp4", max_frames=5)
+    assert frames.shape == (5, 7, 11, 3)
+
+
+def test_load_video_resize(mock_videocap):
+    frames = load_video("dummy.mp4", resize=(3, 5))  # H, W
+    assert frames.shape == (10, 3, 5, 3)  # F, H, W, C
+
+
+def test_load_video_center_crop(mock_videocap):
+    frames = load_video("dummy.mp4", center_crop=(3, 5))
+    assert frames.shape == (10, 3, 5, 3)
