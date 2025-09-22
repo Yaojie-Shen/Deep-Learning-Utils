@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from .basic import *
     from .breakpoint import *
     from .gather import *
+    from .gpu import *
 else:
     import sys
 
