@@ -13,6 +13,8 @@ from PIL import Image
 from torchvision.transforms.functional import normalize
 
 
+# TODO: Deprecate
+
 def _convert_to_numpy_array(data):
     # convert any type to numpy array
     if isinstance(data, np.ndarray):
@@ -93,4 +95,4 @@ def inv_normalize(image_or_video, mean, std):
     return data.numpy()
 
 
-__all__ = ["visualize_image", "visualize_video", "inv_normalize"]
+__all__ = ["visualize_image", "visualize_video"]

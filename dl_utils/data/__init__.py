@@ -13,6 +13,7 @@ if TYPE_CHECKING:
     from .image import *
     from .json import *
     from .lmdb import *
+    from .normalize import *
     from .pickle import *
     from .sample import *
     from .text import *
