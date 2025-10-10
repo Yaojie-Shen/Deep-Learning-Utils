@@ -10,6 +10,7 @@ from .basic import get_local_rank, barrier_if_distributed, get_world_size
 
 
 def _require_ipython():
+    """Try to install IPython if failed to import it."""
     try:
         import IPython
     except ImportError:

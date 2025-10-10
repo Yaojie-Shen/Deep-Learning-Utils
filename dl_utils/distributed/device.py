@@ -2,7 +2,7 @@
 # @Time    : 9/22/25
 # @Author  : Yaojie Shen
 # @Project : Deep-Learning-Utils
-# @File    : gpu.py
+# @File    : device.py
 
 __all__ = [
     "recursive_to",
@@ -20,7 +20,7 @@ def recursive_to(obj: Any, device: Union[str, torch.device] = None) -> Any:
 
     Args:
         obj: The object to move.
-        device: The device to move to. If None, uses the current device.
+        device: The device to move to. If None, uses the current device if gpu is available, else "cpu".
 
     Returns:
         The object with all torch.Tensor moved to the given device.

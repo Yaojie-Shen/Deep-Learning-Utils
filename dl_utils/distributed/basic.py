@@ -5,7 +5,7 @@
 # @File    : basic.py
 
 import os
-from typing import Union
+from typing import Union, Callable, Any
 
 import torch
 import torch.distributed as dist
@@ -93,6 +93,28 @@ def rank0_wrapper(fn):
     return wrapper
 
 
+def dist_info(print_fn: Callable[[str], Any] = print, prefix: str = ""):
+    """
+    Print torch distributed information for debugging.
+    """
+    is_initialized = dist.is_initialized()
+    msg = f"{str(prefix) + ' ' if prefix else ''}Distributed Info".strip()
+    print_fn(f"***** {msg} *****")
+    if is_initialized:
+        lines = [
+            f"Initialized    : {is_initialized}",
+            f"Backend        : {dist.get_backend()}",
+            f"World size     : {dist.get_world_size()}",
+            f"Rank           : {dist.get_rank()}",
+            f"Master address : {get_master_addr()}",
+            f"Master port    : {get_master_port()}",
+        ]
+        print_fn("\n".join(lines))
+    else:
+        print_fn("Not initialized.")
+    print_fn("*" * (len(msg) + 12))
+
+
 __all__ = [
     "get_global_rank",
     "get_local_rank",
@@ -106,4 +128,5 @@ __all__ = [
     "rank0_print",
     "rank0_log",
     "rank0_wrapper",
+    "dist_info",
 ]

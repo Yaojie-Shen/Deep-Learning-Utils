@@ -4,20 +4,17 @@
 # @Project : Deep-Learning-Utils
 # @File    : decorators.py
 
-import logging
-from typing import Callable
-
-logger = logging.getLogger(__name__)
+from typing import Callable, Any
 
 
-def log_on_entry(func: Callable) -> Callable:
+def log_on_entry(func: Callable, print_fn: Callable[[str], Any] = print) -> Callable:
     """
     Functions with this decorator will log the function name at entry.
     When using multiple decorators, this must be applied innermost to properly capture the name.
     """
 
     def log_on_entry_wrapper(*args, **kwargs):
-        logger.info(f"Entering {func.__name__}")
+        print_fn(f"Entering {func.__name__}")
         return func(*args, **kwargs)
 
     return log_on_entry_wrapper
