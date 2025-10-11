@@ -12,28 +12,19 @@ __all__ = [
 import numpy as np
 import torch
 
-from .. import to_numpy, to_original
-from ..type_hint import ArrayLike
+from .. import to_numpy, to_tensor
+from ..type_hint import ArrayLike, Scalar, TorchOrNumpy
 
 
 def _prepare_mean_std(
-        mean: float | int | np.ndarray | torch.Tensor,
-        std: float | int | np.ndarray | torch.Tensor,
+        mean: TorchOrNumpy,
+        std: TorchOrNumpy,
         dim: int,
         ndim: int
-) -> tuple[np.ndarray, np.ndarray]:
-    """A helper function to prepare mean and std for normalization."""
-    # dtype -> numpy
-    if isinstance(mean, (int, float)):
-        mean = np.array([mean])
-    else:
-        mean = to_numpy(mean)
-    if isinstance(std, (int, float)):
-        std = np.array([std])
-    else:
-        std = to_numpy(std)
-
-    # Reshape mean and std to broadcast along the specified dim
+) -> tuple[TorchOrNumpy, TorchOrNumpy]:
+    """A helper function to prepare mean and std for normalization.
+    Reshape mean and std to broadcast along the specified dim
+    """
     shape = [1] * ndim
     shape[dim] = -1
     mean = mean.reshape(shape)
@@ -43,9 +34,9 @@ def _prepare_mean_std(
 
 def normalize(
         data: ArrayLike,
-        mean: float | int | np.ndarray | torch.Tensor,
-        std: float | int | np.ndarray | torch.Tensor,
-        dim=-1
+        mean: Scalar | ArrayLike,
+        std: Scalar | ArrayLike,
+        dim: int = -1
 ) -> ArrayLike:
     """Normalize the input array (usually image or video).
 
@@ -72,23 +63,27 @@ def normalize(
         tensor([[[0., 0., 0.]]], dtype=torch.float64)
     """
 
-    # Convert to numpy for simplicity
-    ori_type = type(data)
-    data = to_numpy(data)
-
-    mean, std = _prepare_mean_std(mean, std, dim, len(data.shape))
-
-    # Normalize
-    data = (data - mean) / std
-
-    # Convert back to original type
-    return to_original(data, ori_type)
+    if isinstance(data, list):
+        return normalize(np.array(data), mean, std, dim).tolist()
+    if isinstance(data, tuple):
+        return tuple(normalize(np.array(data), mean, std, dim).tolist())
+    elif isinstance(data, np.ndarray):
+        mean, std = to_numpy(mean), to_numpy(std)
+        mean, std = _prepare_mean_std(mean, std, dim, len(data.shape))
+        return (data - mean) / std
+    elif isinstance(data, torch.Tensor):
+        # NOTE: Move std and mean to same device and convert to same dtype
+        mean, std = to_tensor(mean).to(data), to_tensor(std).to(data)
+        mean, std = _prepare_mean_std(mean, std, dim, len(data.shape))
+        return (data - mean) / std
+    else:
+        raise TypeError(f"Unsupported data type: {type(data)}")
 
 
 def inv_normalize(
         data: ArrayLike,
-        mean: float | int | np.ndarray | torch.Tensor,
-        std: float | int | np.ndarray | torch.Tensor,
+        mean: Scalar | ArrayLike,
+        std: Scalar | ArrayLike,
         dim=-1
 ) -> ArrayLike:
     """Inverse normalize the input array (usually image or video).
@@ -104,14 +99,18 @@ def inv_normalize(
     Returns:
         Denormalized image or video in the same type as input (NumPy array or PyTorch tensor).
     """
-    # Convert to numpy for simplicity
-    ori_type = type(data)
-    data = to_numpy(data)
-
-    mean, std = _prepare_mean_std(mean, std, dim, len(data.shape))
-
-    # Inverse normalize
-    data = data * std + mean
-
-    # Convert back to original type
-    return to_original(data, ori_type)
+    if isinstance(data, list):
+        return inv_normalize(np.array(data), mean, std, dim).tolist()
+    if isinstance(data, tuple):
+        return tuple(inv_normalize(np.array(data), mean, std, dim).tolist())
+    elif isinstance(data, np.ndarray):
+        mean, std = to_numpy(mean), to_numpy(std)
+        mean, std = _prepare_mean_std(mean, std, dim, len(data.shape))
+        return data * std + mean
+    elif isinstance(data, torch.Tensor):
+        # NOTE: Move std and mean to same device and convert to same dtype
+        mean, std = to_tensor(mean, to=data), to_tensor(std, to=data)
+        mean, std = _prepare_mean_std(mean, std, dim, len(data.shape))
+        return data * std + mean
+    else:
+        raise TypeError(f"Unsupported data type: {type(data)}")
