@@ -96,3 +96,41 @@ Visualize
    :members:
    :undoc-members:
    :show-inheritance:
+
+Misc
+----
+
+Chunk
+^^^^^
+.. automodule:: dl_utils.chunk_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Decorators
+^^^^^^^^^^
+.. automodule:: dl_utils.decorators
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Cache
+^^^^^
+.. automodule:: dl_utils.global_cache_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+QPS Control
+^^^^^^^^^^^
+.. automodule:: dl_utils.qps_control
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Timer
+^^^^^
+.. automodule:: dl_utils.timer
+   :members:
+   :undoc-members:
+   :show-inheritance:
