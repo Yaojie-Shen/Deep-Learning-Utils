@@ -29,11 +29,11 @@ from dl_utils import inspect_data
             "meta": {"created": "2025-08-01", "version": 1.0},
             "tuple": (1, 2, 3),
             "tuple_of_mixed_types": (1, 2.0, "A"),
-            "tuple_of_log_string": ("A"* 1000, "B" * 100, 1)
+            "tuple_of_log_string": ("A" * 1000, "B" * 100, 1)
         }
     ]
 )
 def test_inspect_data_visualize(test_data):
     """Test inspect_data with various data types for visual output only."""
     print("\n\n🔍 Visualizing structure for test data:")
-    inspect_data(test_data)
+    inspect_data(test_data, name="data_inspect")

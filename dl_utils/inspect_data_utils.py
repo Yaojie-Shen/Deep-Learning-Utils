@@ -10,6 +10,7 @@ import argparse
 import json
 import os
 import pickle
+from functools import partial
 from typing import Any, Optional
 
 import numpy as np
@@ -39,12 +40,22 @@ def inspect_data(
         max_dict_items: Optional[int] = None,
         max_list_items: Optional[int] = None,
         max_depth: int = 2,
+        name: Optional[str] = None
 ) -> None:
-    """Recursively inspect and print the structure of a data object using rich Tree."""
+    """Recursively inspects and prints the structure of a data object using a rich Tree.
+
+    Args:
+        data: The data object to inspect.
+        max_items: Maximum number of items to display for each container (dict, list, tuple).
+        max_dict_items: Maximum number of items to display for dictionaries.
+        max_list_items: Maximum number of items to display for lists and tuples.
+        max_depth: Maximum recursion depth.
+        name: Optional name to label the variable.
+    """
     console = Console()
     tree = _inspect_node(
         data,
-        label="root",
+        label=str(name) if name is not None else "root",
         max_items=max_items,
         max_dict_items=max_dict_items,
         max_list_items=max_list_items,
@@ -220,25 +231,6 @@ def main() -> None:
         print(f"❌ Failed to load file: {e}")
         exit(1)
 
-    # This function is for interactive mode
-    def save_as(new_file_path: str):
-        if args.format == "torch" or (args.format == "auto" and file_ext in ['.pt', '.pth']):
-            torch.save(data, new_file_path)
-        elif args.format == "csv" or (args.format == "auto" and file_ext == '.csv'):
-            data.to_csv(new_file_path, index=False)
-        elif args.format == "json" or (args.format == "auto" and file_ext == '.json'):
-            with open(new_file_path, 'w') as f:
-                json.dump(data, f, indent=4)
-        elif args.format == "pkl" or (args.format == "auto" and file_ext in ['.pkl', '.pickle']):
-            with open(new_file_path, 'wb') as f:
-                pickle.dump(data, f)
-        else:
-            raise RuntimeError()
-
-    # This function is for interactive mode
-    def save():
-        save_as(file_path)
-
     if not args.interactive:
         print(f"\n📦 Inspecting file: {file_path}\n")
         inspect_data(
@@ -252,12 +244,33 @@ def main() -> None:
         try:
             from IPython import embed
 
+            # This function is for interactive mode
+            def save_as(new_file_path: str):
+                if args.format == "torch" or (args.format == "auto" and file_ext in ['.pt', '.pth']):
+                    torch.save(data, new_file_path)
+                elif args.format == "csv" or (args.format == "auto" and file_ext == '.csv'):
+                    data.to_csv(new_file_path, index=False)
+                elif args.format == "json" or (args.format == "auto" and file_ext == '.json'):
+                    with open(new_file_path, 'w') as f:
+                        json.dump(data, f, indent=4)
+                elif args.format == "pkl" or (args.format == "auto" and file_ext in ['.pkl', '.pickle']):
+                    with open(new_file_path, 'wb') as f:
+                        pickle.dump(data, f)
+                else:
+                    raise RuntimeError()
+
+            # This function is for interactive mode
+            def save():
+                save_as(file_path)
+
+            inspect = partial(inspect_data, data)
+
             embed(
                 header="🔍 Entering IPython shell. You can explore the variable `data`.\n"
                        "\n"
                        "Basic Usage:\n"
                        "  - `data` to access the loaded data\n"
-                       "  - `inspect_data(data)` to inspect the data structure\n"
+                       "  - `inspect()` to inspect the data structure\n"
                        "  - `exit()` to exit the shell\n"
                        "\n"
                        "Modifying Data:\n"
