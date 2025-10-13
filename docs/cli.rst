@@ -1,3 +1,93 @@
 Command Line Tools
 ==================
 
+inspect_data
+--------------
+
+``inspect_data`` is a command-line tool for inspecting and visualizing the structure of serialized data files, such as PyTorch tensors, NumPy arrays, pandas DataFrames, JSON, CSV, or pickle files.
+
+.. code-block:: console
+
+   $ inspect_data -h
+
+.. program-output:: inspect_data -h
+
+Example
+~~~~~~~
+
+.. code-block:: console
+
+   $ inspect_data data.pt
+
+    📦 Inspecting file: data.pt
+
+    root: torch.Tensor (shape=(3, 3), dtype=torch.float32, device=cpu)
+      values: [-0.005097548943012953, 1.0449755191802979, -0.8167067766189575, 1.957526683807373, 0.31035667657852173] ...
+      std: 1.10e+00 mean: 2.39e-01 min: -1.88e+00 max: 1.96e+00
+
+Interactive Mode
+~~~~~~~~~~~~~~~~
+
+To enter interactive mode, use the ``--interactive`` flag.
+
+.. code-block:: console
+
+   $ inspect_data data/train.pt --interactive
+
+.. note::
+
+    ``IPython`` is required for interactive python shell. It will be installed automatically at runtime if not found.
+
+
+Use ``data`` variable to access the deserialized data.
+Several functions can be used in interactive mode:
+
+- ``inspect(max_items: int = 10, max_dict_items: Optional[int] = None, max_list_items: Optional[int] = None, max_depth: int = 2)``: Inspect the structure of the data.
+- ``save()``: Save the current state of the data to the original file.
+- ``save_as()``: Save the current state of the data to a new file.
+
+
+For example:
+
+.. code-block:: console
+
+   $ inspect_data data.pt --interactive
+
+    🔍 Entering IPython shell. You can explore the variable `data`.
+
+    Basic Usage:
+      - `data` to access the loaded data
+      - `inspect_data(data)` to inspect the data structure
+      - `exit()` to exit the shell
+
+    Modifying Data:
+      - Edit the `data` variable in the shell to modify the data
+      - `save()` to save the modified data back to the file
+      - `save_as('new_file_path')` to save the modified data to a new file
+
+
+.. code-block:: python
+
+   >>> inspect()
+    root: torch.Tensor (shape=(3, 3), dtype=torch.float32, device=cpu)
+      values: [-0.005097548943012953, 1.0449755191802979, -0.8167067766189575, 1.957526683807373, 0.31035667657852173] ...
+      std: 1.10e+00 mean: 2.39e-01 min: -1.88e+00 max: 1.96e+00
+   >>> data[0] = 0
+   >>> save()
+   >>> save_as('new_data.pt')
+
+In Code
+~~~~~~~
+
+In python code, one can use `inspect_data` function to get the same outputs:
+
+.. code-block:: python
+
+   >>> import torch
+   >>> from dl_utils import inspect_data
+   >>>
+   >>> data = torch.randn(3, 3)
+   >>> inspect_data(data)
+   root: torch.Tensor (shape=(3, 3), dtype=torch.float32, device=cpu)
+     values: [0.6490903496742249, -2.151139497756958, -0.021105077117681503, 0.009235836565494537, 0.6836646199226379] ...
+     std: 1.11e+00 mean: -7.85e-02 min: -2.15e+00 max: 1.69e+00
