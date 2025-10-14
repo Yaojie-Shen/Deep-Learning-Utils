@@ -14,11 +14,23 @@ from typing import Optional
 from tabulate import tabulate
 
 
-def get_timestamp():
+def get_timestamp() -> str:
+    """Return the current time in a format suitable for filenames.
+
+    Examples:
+        >>> get_timestamp()
+        '2022-10-11T13-41-45W'
+    """
     return "{0:%Y-%m-%dT%H-%M-%SW}".format(datetime.datetime.now())
 
 
 def get_readable_timestamp():
+    """Return the current time in a readable format.
+
+    Examples:
+        >>> get_readable_timestamp()
+        '2022-10-11 13:41:45'
+    """
     return "{:%Y-%m-%d %H:%M:%S}".format(datetime.datetime.now())
 
 
@@ -28,6 +40,8 @@ def get_current_time_in_ms(precision: int) -> float:
 
 
 class Timer:
+    """A simple timer for getting duration in milliseconds."""
+
     def __init__(self, precision=3):
         assert precision >= 0, "precision must be greater than or equal to 0"
         self._precision = precision
@@ -51,6 +65,39 @@ class Timer:
 
 
 class ExecutionTimer(Timer):
+    """A timer for measuring the execution time of different code blocks (stages).
+
+    Args:
+        history_size: Number of history to store for each stage. If None, all history will be stored.
+        precision: Precision of the duration in milliseconds.
+        start_prompt: Format string for the start prompt. If None, the default prompt will be used.
+        end_prompt: Format string for the end prompt. If None, the default prompt will be used.
+        log: Whether to print the start and end prompts at the beginning and end of each stage.
+
+    Examples:
+        >>> timer = ExecutionTimer(log=True)
+        >>> with timer.stage("stage_1"):
+        (2025-10-14 13:37:31) => Starting stage: stage_1...
+        >>>   ... # do something
+        (2025-10-14 13:37:31) => Finished stage: stage_1 | Took 0.070 ms.
+        >>> timer.start_stage("stage_2")
+        (2025-10-14 13:37:31) => Starting stage: stage_2...
+        >>> ... # do something
+        >>> timer.start_stage("stage_3")
+        (2025-10-14 13:37:31) => Finished stage: stage_2 | Took 0.070 ms.
+        (2025-10-14 13:37:31) => Starting stage: stage_3...
+        >>> ... # do something
+        >>> timer.end_stage("stage_3")
+        (2025-10-14 13:37:31) => Finished stage: stage_3 | Took 0.040 ms.
+        >>> timer.print_table()
+        Stage      Total (ms)    Count    Min (ms)    Max (ms)    Avg (ms)
+        -------  ------------  -------  ----------  ----------  ----------
+        stage_1          0.07        1        0.07        0.07        0.07
+        stage_2          0.07        1        0.07        0.07        0.07
+        stage_3          0.04        1        0.04        0.04        0.04
+        -------------------------
+        Total Time: 0.18 ms
+    """
 
     def __init__(
             self, history_size=None, precision=2,
@@ -70,27 +117,38 @@ class ExecutionTimer(Timer):
     @contextmanager
     def stage(self, name: str):
         """
-        Usage:
-            with timer.stage("stage_name"):
-                # do something
+        Examples:
+            >>> with timer.stage("stage_name"):
+            >>>     ... # do something
 
-        Note: This context manager stores the stage name and duration independently, so it is suitable for nested use.
+        Note:
+            This context manager stores the stage name and duration independently, so it is suitable for nested use.
+            However, the output (e.g. `print_table()`) will be not in a nested format.
         """
         start = self.get_current_time_in_ms()
+
+        if self._enable_log:
+            print(self._start_log_prompt.format(ctime=get_readable_timestamp(), stage=name))
+
         try:
             yield start
         finally:
             duration = self.get_current_time_in_ms() - start
             self._stage_log[name].append(duration)
 
+            if self._enable_log:
+                print(self._end_log_prompt.format(ctime=get_readable_timestamp(), stage=name, duration=duration))
+
     def start_stage(self, name: Optional[str] = None):
         """
-        Log the start of a stage.
-        Note: Only for sequential use.
+        Log the start of a stage. If there is a previous stage, the previous stage will be ended automatically by
+        calling `end_stage()`.
 
         Args:
             name: The name of the stage to start. If None, one must be specified in the next call to `end_stage`.
-                If not None and there is a previous stage, the previous stage will be ended automatically.
+
+        Note:
+            Only for sequential use.
         """
         assert name is None or isinstance(name, str), \
             f"Invalid stage name: {name}"
@@ -109,10 +167,12 @@ class ExecutionTimer(Timer):
     def end_stage(self, name: Optional[str] = None):
         """
         Log the end of a stage.
-        Note: Only for sequential use.
 
         Args:
             name: The name of the stage to end. If None, the name of the last call to `start_stage` must be specified.
+
+        Note:
+            Only for sequential use.
         """
         assert name is None or isinstance(name, str), \
             f"Invalid stage name: {name}"
@@ -154,6 +214,9 @@ class ExecutionTimer(Timer):
         }
 
     def print_table(self):
+        if self._stage_name is not None:
+            self.end_stage()
+
         data = [[k, v["total"], v["count"], v["min"], v["max"], v["avg"]]
                 for k, v in self.summary().items()]
         print(tabulate(
@@ -166,4 +229,4 @@ class ExecutionTimer(Timer):
         print(f"Total Time: {total_time:.{self._precision}f} ms")
 
 
-__all__ = ["get_timestamp", "get_readable_timestamp", "Timer", "ExecutionTimer"]
+__all__ = ["get_timestamp", "get_readable_timestamp", "get_current_time_in_ms", "Timer", "ExecutionTimer"]
