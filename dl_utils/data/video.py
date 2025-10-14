@@ -24,6 +24,7 @@ def save_video(
         codec: str = "avc1"
 ):
     """
+    Save video frames to a video file utilizing opencv.
 
     Args:
         frames: Video frames in shape (F, H, W, C). The pixel values should be in range [0, 255].
@@ -39,6 +40,12 @@ def save_video(
 
     fourcc = cv2.VideoWriter_fourcc(*codec)
     out = cv2.VideoWriter(save_path, fourcc, fps, (width, height))
+
+    # Ensure the video writer is opened successfully
+    if not out.isOpened():
+        raise RuntimeError("Failed to open video writer, consider setting the codec to 'XVID' for compatibility. "
+                           "Check the opencv error message above for more details.")
+
     for frame in frames:
         out.write(frame)
     out.release()
@@ -79,30 +86,36 @@ def load_video(
         else:
             frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
+        # Resize
         h, w, _ = frame.shape
-
         if resize is not None:
             if isinstance(resize, int):
                 # Resize by short edge
-                if h > w:
-                    frame = cv2.resize(frame, (512, int(512 * h / w)))
-                else:
-                    frame = cv2.resize(frame, (int(512 * w / h), 512))
+                resize = (resize, int(resize * h / w)) if h > w else (int(resize * w / h), resize)
             elif isinstance(resize, tuple) or isinstance(resize, list):
-                frame = cv2.resize(frame, resize)
+                assert len(resize) == 2, "'resize' should be a tuple/list of two."
             else:
                 raise ValueError(f"Invalid resize value: {resize}, expected int or tuple/list of two.")
 
+            frame = cv2.resize(frame, resize)
+
         # Center crop
+        h, w, _ = frame.shape
         if center_crop is not None:
             if isinstance(center_crop, int):
-                frame = frame[h // 2 - center_crop // 2:h // 2 + center_crop // 2,
-                        w // 2 - center_crop // 2:w // 2 + center_crop // 2]
+                center_crop = (center_crop, center_crop)
             elif isinstance(center_crop, tuple) or isinstance(center_crop, list):
-                frame = frame[h // 2 - center_crop[1] // 2:h // 2 + center_crop[1] // 2,
-                        w // 2 - center_crop[0] // 2:w // 2 + center_crop[0] // 2]
+                assert len(center_crop) == 2, "'center_crop' should be a tuple/list of two."
             else:
                 raise ValueError(f"Invalid center_crop value: {center_crop}, expected int or tuple/list of two.")
+
+            assert h >= center_crop[1] and w >= center_crop[0], \
+                f"Frame size ({h}, {w}) is smaller than center crop size ({center_crop[0]}, {center_crop[1]})."
+
+            frame = frame[
+                    h // 2 - center_crop[1] // 2:h // 2 + (center_crop[1] - center_crop[1] // 2),
+                    w // 2 - center_crop[0] // 2:w // 2 + (center_crop[0] - center_crop[0] // 2)
+                    ]
 
         frames.append(frame)
         count += 1

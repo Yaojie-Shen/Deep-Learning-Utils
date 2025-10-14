@@ -56,10 +56,20 @@ def test_load_video_mocked(mock_videocap):
 
 
 def test_load_video_resize(mock_videocap):
-    frames = load_video("dummy.mp4", resize=(3, 5))  # H, W
-    assert frames.shape == (10, 3, 5, 3)  # F, H, W, C
+    frames = load_video("dummy.mp4", resize=(3, 5))  # W, H
+    assert frames.shape == (10, 5, 3, 3)  # F, H, W, C
+
+
+def test_load_video_resize_int(mock_videocap):
+    frames = load_video("dummy.mp4", resize=14)
+    assert frames.shape == (10, 14, 22, 3)
 
 
 def test_load_video_center_crop(mock_videocap):
     frames = load_video("dummy.mp4", center_crop=(3, 5))
-    assert frames.shape == (10, 3, 5, 3)
+    assert frames.shape == (10, 5, 3, 3)
+
+
+def test_load_video_center_crop_int(mock_videocap):
+    frames = load_video("dummy.mp4", center_crop=2)
+    assert frames.shape == (10, 2, 2, 3)
