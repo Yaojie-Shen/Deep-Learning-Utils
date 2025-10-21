@@ -8,7 +8,6 @@ import datetime
 import time
 from collections import defaultdict
 from collections import deque
-from contextlib import contextmanager
 from typing import Optional
 
 from tabulate import tabulate
@@ -65,7 +64,7 @@ class Timer:
 
 
 class ExecutionTimer(Timer):
-    """A timer for measuring the execution time of different code blocks (stages).
+    """A timer for tracking the execution time of sequential stages.
 
     Args:
         history_size: Number of history to store for each stage. If None, all history will be stored.
@@ -73,39 +72,39 @@ class ExecutionTimer(Timer):
         start_prompt: Format string for the start prompt. If None, the default prompt will be used.
         end_prompt: Format string for the end prompt. If None, the default prompt will be used.
         log: Whether to print the start and end prompts at the beginning and end of each stage.
+        name: Recognizable name of the timer to be used in outputs.
 
     Examples:
         >>> timer = ExecutionTimer(log=True)
-        >>> with timer.stage("stage_1"):
-        (2025-10-14 13:37:31) => Starting stage: stage_1...
-        >>>   ... # do something
-        (2025-10-14 13:37:31) => Finished stage: stage_1 | Took 0.070 ms.
+        >>> timer.start_stage("stage_1")
+        (2025-10-21 16:17:32) => Starting stage: stage_1...
+        >>> time.sleep(0.1) # do something
         >>> timer.start_stage("stage_2")
-        (2025-10-14 13:37:31) => Starting stage: stage_2...
-        >>> ... # do something
-        >>> timer.start_stage("stage_3")
-        (2025-10-14 13:37:31) => Finished stage: stage_2 | Took 0.070 ms.
-        (2025-10-14 13:37:31) => Starting stage: stage_3...
-        >>> ... # do something
-        >>> timer.end_stage("stage_3")
-        (2025-10-14 13:37:31) => Finished stage: stage_3 | Took 0.040 ms.
+        (2025-10-21 16:17:32) => Finished stage: stage_1 | Took 103.030 ms.
+        (2025-10-21 16:17:32) => Starting stage: stage_2...
+        >>> time.sleep(0.2) # do something
+        >>> timer.end_stage("stage_2")
+        (2025-10-21 16:17:32) => Finished stage: stage_2 | Took 203.100 ms.
         >>> timer.print_table()
         Stage      Total (ms)    Count    Min (ms)    Max (ms)    Avg (ms)
         -------  ------------  -------  ----------  ----------  ----------
-        stage_1          0.07        1        0.07        0.07        0.07
-        stage_2          0.07        1        0.07        0.07        0.07
-        stage_3          0.04        1        0.04        0.04        0.04
+        stage_1        103.03        1      103.03      103.03      103.03
+        stage_2        203.10        1      203.10      203.10      203.10
         -------------------------
-        Total Time: 0.18 ms
+        Total Time: 306.13 ms
     """
 
     def __init__(
-            self, history_size=None, precision=2,
-            start_prompt: str = None, end_prompt: str = None, log: bool = False
+            self,
+            history_size: Optional[int] = None,
+            precision: int = 2,
+            start_prompt: str = None, end_prompt: str = None, log: bool = False,
+            name: Optional[str] = None,
     ):
         super().__init__(precision=precision)
 
         self._stage_name = None
+
         self._stage_log = defaultdict(lambda: deque(maxlen=history_size))
 
         self._enable_log = log
@@ -114,30 +113,7 @@ class ExecutionTimer(Timer):
         self._end_log_prompt = \
             "({ctime}) => Finished stage: {stage} | Took {duration:.3f} ms." if end_prompt is None else end_prompt
 
-    @contextmanager
-    def stage(self, name: str):
-        """
-        Examples:
-            >>> with timer.stage("stage_name"):
-            >>>     ... # do something
-
-        Note:
-            This context manager stores the stage name and duration independently, so it is suitable for nested use.
-            However, the output (e.g. `print_table()`) will be not in a nested format.
-        """
-        start = self.get_current_time_in_ms()
-
-        if self._enable_log:
-            print(self._start_log_prompt.format(ctime=get_readable_timestamp(), stage=name))
-
-        try:
-            yield start
-        finally:
-            duration = self.get_current_time_in_ms() - start
-            self._stage_log[name].append(duration)
-
-            if self._enable_log:
-                print(self._end_log_prompt.format(ctime=get_readable_timestamp(), stage=name, duration=duration))
+        self._name = name
 
     def start_stage(self, name: Optional[str] = None):
         """
@@ -202,6 +178,17 @@ class ExecutionTimer(Timer):
         return out
 
     def summary(self):
+        """Return a summary of all stages as a dictionary.
+
+        Each key is a stage name, and its value is a dictionary with:
+
+        - "total": total time (ms)
+        - "avg": average time (ms)
+        - "min": minimum time (ms)
+        - "max": maximum time (ms)
+        - "last": last recorded time (ms)
+        - "count": number of runs
+        """
         return {
             k: {
                 "total": round(sum(v), self._precision),
@@ -214,19 +201,27 @@ class ExecutionTimer(Timer):
         }
 
     def print_table(self):
+        """Print the summary of the timer in a table format."""
         if self._stage_name is not None:
             self.end_stage()
 
+        summary = self.summary()
         data = [[k, v["total"], v["count"], v["min"], v["max"], v["avg"]]
-                for k, v in self.summary().items()]
-        print(tabulate(
+                for k, v in summary.items()]
+        total_time = sum(v["total"] for v in summary.values())
+
+        table_str = tabulate(
             data,
             headers=["Stage", "Total (ms)", "Count", "Min (ms)", "Max (ms)", "Avg (ms)"],
-            tablefmt="simple", floatfmt=f".0{self._precision}f",
-        ))
-        print("-" * 25)
-        total_time = sum(v["total"] for v in self.summary().values())
-        print(f"Total Time: {total_time:.{self._precision}f} ms")
+            tablefmt="pipe", floatfmt=f".0{self._precision}f",
+        )
+
+        if self._name is not None:
+            name_str = f"=> {self._name} | Total Time: {total_time:.{self._precision}f} ms"
+        else:
+            name_str = f"=> Total Time: {total_time:.{self._precision}f} ms"
+
+        print(f"{name_str}\n{table_str}")
 
 
 __all__ = ["get_timestamp", "get_readable_timestamp", "get_current_time_in_ms", "Timer", "ExecutionTimer"]
