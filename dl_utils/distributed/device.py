@@ -20,6 +20,7 @@ def recursive_to(obj: Any, *args, **kwargs) -> Any:
 
     Args:
         obj: The object to move.
+        *args: Arguments to pass to torch.Tensor.to().
         **kwargs: Keyword arguments to pass to torch.Tensor.to().
 
     Returns:
@@ -27,6 +28,9 @@ def recursive_to(obj: Any, *args, **kwargs) -> Any:
 
     Note:
         If no device is specified, the current (gpu) device will be used. If no gpu is available, the cpu will be used.
+
+    Note:
+        This operation is in-place. You should **copy** if you want to keep the original object.
     """
     if (not args) and (not kwargs):
         kwargs['device'] = torch.cuda.current_device() if torch.cuda.is_available() else "cpu"
