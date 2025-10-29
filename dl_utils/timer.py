@@ -109,9 +109,9 @@ class ExecutionTimer(Timer):
 
         self._enable_log = log
         self._start_log_prompt = \
-            "({ctime}) => Starting stage: {stage}..." if start_prompt is None else start_prompt
+            "({ctime}) {name} => starting stage: {stage}..." if start_prompt is None else start_prompt
         self._end_log_prompt = \
-            "({ctime}) => Finished stage: {stage} | Took {duration:.3f} ms." if end_prompt is None else end_prompt
+            "({ctime}) {name} => finished stage: {stage} | took {duration:.3f} ms." if end_prompt is None else end_prompt
 
         self._name = name
 
@@ -138,7 +138,8 @@ class ExecutionTimer(Timer):
         self.reset()
 
         if self._enable_log and name is not None:
-            print(self._start_log_prompt.format(ctime=get_readable_timestamp(), stage=self._stage_name))
+            print(self._start_log_prompt.format(ctime=get_readable_timestamp(), stage=self._stage_name,
+                                                name=self._name or "ExecutionTimer"))
 
     def end_stage(self, name: Optional[str] = None):
         """
@@ -166,7 +167,8 @@ class ExecutionTimer(Timer):
         self._stage_name = None
 
         if self._enable_log:
-            print(self._end_log_prompt.format(ctime=get_readable_timestamp(), stage=name, duration=duration))
+            print(self._end_log_prompt.format(ctime=get_readable_timestamp(), stage=name, duration=duration,
+                                              name=self._name or "ExecutionTimer"))
 
     def __str__(self):
         out = ""

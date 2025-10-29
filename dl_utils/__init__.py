@@ -17,6 +17,7 @@ if TYPE_CHECKING:
     from .decorators import *
     from .global_cache_utils import *
     from .inspect_data_utils import *
+    from .memory_utils import *
     from .prefetcher import *
     from .qps_control import *
     from .timer import *
