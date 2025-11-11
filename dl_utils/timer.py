@@ -208,13 +208,13 @@ class ExecutionTimer(Timer):
             self.end_stage()
 
         summary = self.summary()
-        data = [[k, v["total"], v["count"], v["min"], v["max"], v["avg"]]
+        data = [[k, v["total"], v["count"], v["min"], v["max"], v["avg"], v["last"]]
                 for k, v in summary.items()]
         total_time = sum(v["total"] for v in summary.values())
 
         table_str = tabulate(
             data,
-            headers=["Stage", "Total (ms)", "Count", "Min (ms)", "Max (ms)", "Avg (ms)"],
+            headers=["Stage", "Total (ms)", "Count", "Min (ms)", "Max (ms)", "Avg (ms)", "Last (ms)"],
             tablefmt="pipe", floatfmt=f".0{self._precision}f",
         )
 
