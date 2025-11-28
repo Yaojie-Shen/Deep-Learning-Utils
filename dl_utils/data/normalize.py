@@ -32,6 +32,14 @@ def _prepare_mean_std(
     return mean, std
 
 
+def _normalize(data, mean, std):
+    return (data - mean) / std
+
+
+def _inv_normalize(data, mean, std):
+    return data * std + mean
+
+
 def normalize(
         data: ArrayLike,
         mean: Scalar | ArrayLike,
@@ -70,12 +78,12 @@ def normalize(
     elif isinstance(data, np.ndarray):
         mean, std = to_numpy(mean), to_numpy(std)
         mean, std = _prepare_mean_std(mean, std, dim, len(data.shape))
-        return (data - mean) / std
+        return _normalize(data, mean, std)
     elif isinstance(data, torch.Tensor):
         # NOTE: Move std and mean to same device and convert to same dtype
         mean, std = to_tensor(mean).to(data), to_tensor(std).to(data)
         mean, std = _prepare_mean_std(mean, std, dim, len(data.shape))
-        return (data - mean) / std
+        return _normalize(data, mean, std)
     else:
         raise TypeError(f"Unsupported data type: {type(data)}")
 
@@ -106,11 +114,11 @@ def inv_normalize(
     elif isinstance(data, np.ndarray):
         mean, std = to_numpy(mean), to_numpy(std)
         mean, std = _prepare_mean_std(mean, std, dim, len(data.shape))
-        return data * std + mean
+        return _inv_normalize(data, mean, std)
     elif isinstance(data, torch.Tensor):
         # NOTE: Move std and mean to same device and convert to same dtype
         mean, std = to_tensor(mean, to=data), to_tensor(std, to=data)
         mean, std = _prepare_mean_std(mean, std, dim, len(data.shape))
-        return data * std + mean
+        return _inv_normalize(data, mean, std)
     else:
         raise TypeError(f"Unsupported data type: {type(data)}")

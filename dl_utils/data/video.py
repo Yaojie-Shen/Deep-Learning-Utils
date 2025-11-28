@@ -73,6 +73,9 @@ def load_video(
         - If the video is grayscale, the color channel will be replicated to 3.
     """
     cap = cv2.VideoCapture(video_path)
+    if not cap.isOpened():
+        raise RuntimeError(f"Failed to open video capture.")
+
     frames = []
 
     count = 0

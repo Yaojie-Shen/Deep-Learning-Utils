@@ -20,38 +20,38 @@ def to_numpy(array: ArrayLike | Scalar) -> np.ndarray:
     if isinstance(array, np.ndarray):
         return array
     elif isinstance(array, torch.Tensor):
-        return array.detach().cpu().numpy()
-    elif isinstance(array, (list, tuple)):
-        return np.array(array)
-    elif isinstance(array, (int, float)):
+        array = array.detach().cpu()
+        # Convert unsupported data type
+        if array.dtype is torch.bfloat16:
+            array = array.float()
+        return array.numpy()
+    elif isinstance(array, (list, tuple, int, float)):
         return np.array(array)
     else:
         raise TypeError(f"Unsupported type: {type(array)}")
 
 
-def to_tensor(array: ArrayLike | Scalar, to=None) -> torch.Tensor:
+def to_tensor(array: ArrayLike | Scalar, *args, **kwargs) -> torch.Tensor:
     """
     Convert a scalar or array-like object to a PyTorch tensor.
 
     Args:
         array: Scalar or array-like object to convert.
-        to: Optional. Device, dtype, or a target tensor.
-            If a tensor is provided, the resulting tensor will have the same device and dtype, following PyTorch's
-            `.to()` behavior.
+        *args: Additional arguments passed to torch.Tensor.to()
+        **kwargs: Additional keyword arguments passed to torch.Tensor.to()
     """
     if isinstance(array, torch.Tensor):
         pass
     elif isinstance(array, np.ndarray):
         array = torch.from_numpy(array)
-    elif isinstance(array, (list, tuple)):
-        array = torch.tensor(array)
-    elif isinstance(array, (int, float)):
+    elif isinstance(array, (list, tuple, int, float)):
         array = torch.tensor(array)
     else:
         raise TypeError(f"Unsupported type: {type(array)}")
 
-    if to is not None:
-        array = array.to(to)
+    if args or kwargs:
+        array = array.to(*args, **kwargs)
+
     return array
 
 
