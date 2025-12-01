@@ -111,6 +111,8 @@ def test_inv_normalize(img, mean, std, dim):
     "data_np, expected_np, pattern",
     [
         (np.array([0, 128, 255], np.uint8), np.array([0.0, 128 / 255.0, 1.0], np.float32), "uint8->0_1"),
+        (np.array([0, 128, 255], np.float16), np.array([0.0, 128 / 255.0, 1.0], np.float16), "uint8->0_1"),
+        (np.array([0, 128, 255], np.long), np.array([0.0, 128 / 255.0, 1.0], np.float32), "uint8->0_1"),
         (np.array([0.0, 0.5, 1.0], np.float32), np.array([0, 128, 255], np.uint8), "0_1->uint8"),
         (np.array([0, 128, 255], np.uint8), np.array([-1.0, (128 / 255.0) * 2 - 1, 1.0], np.float32), "uint8->-1_1"),
         (np.array([-1.0, 0.0, 1.0], np.float32), np.array([0, 128, 255], np.uint8), "-1_1->uint8"),

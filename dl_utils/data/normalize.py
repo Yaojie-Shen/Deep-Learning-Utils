@@ -130,8 +130,10 @@ def convert_image_video_range(data: TorchOrNumpy, pattern: str):
     Convert torch/numpy images/videos between flexible dtype and range.
 
     Note:
-        - When converting from `uint8` to `-1_1` or `0_1`, the output will be float32.
-        - When converting between `-1_1` and `0_1`, the output will retain the same dtype as input.
+        - When converting from `uint8`, inputs may be integers or floating point values.
+        - When converting from `-1_1` or `0_1`, inputs must be floating point.
+        - When converting from `uint8` to `-1_1` or `0_1`, floating-point inputs preserve their dtype; integer inputs are promoted to float32.
+        - When converting between `-1_1` and `0_1`, the output keeps the input’s dtype.
 
     Examples:
 
@@ -158,20 +160,20 @@ def convert_image_video_range(data: TorchOrNumpy, pattern: str):
     if in_spec not in RANGE_SPECS or out_spec not in RANGE_SPECS:
         raise ValueError(f"Unknown spec(s): {pattern}")
 
+    assert isinstance(data, (np.ndarray, torch.Tensor)), \
+        f"Data type \"{type(data)}\" is not supported, expected np.ndarray or torch.Tensor"
+
     in_dtype, in_low, in_high = RANGE_SPECS[in_spec]
     out_dtype, out_low, out_high = RANGE_SPECS[out_spec]
 
     # check input dtype
-    if in_dtype == "uint8":
+    if in_dtype in ("uint8",):
+        pass
+    elif in_dtype in ("float",):
         if isinstance(data, torch.Tensor):
-            assert not data.is_floating_point()
+            assert data.is_floating_point(), "Expected floating-point tensor"
         else:
-            assert np.issubdtype(data.dtype, np.integer)
-    elif in_dtype == "float":
-        if isinstance(data, torch.Tensor):
-            assert data.is_floating_point()
-        else:
-            assert np.issubdtype(data.dtype, np.floating)
+            assert np.issubdtype(data.dtype, np.floating), "Expected floating-point array"
     else:
         raise NotImplementedError(f"Unknown dtype: {in_dtype}")
 
@@ -179,12 +181,17 @@ def convert_image_video_range(data: TorchOrNumpy, pattern: str):
         return data  # If same, return directly
 
     if in_dtype == "uint8":
-        data = data.astype(np.float32) if \
-            isinstance(data, np.ndarray) else data.to(torch.float32)
+        if isinstance(data, torch.Tensor) and not data.is_floating_point():
+            data = data.to(torch.float32)
+        elif isinstance(data, np.ndarray) and not np.issubdtype(data.dtype, np.floating):
+            data = data.astype(np.float32)
 
-    # Normalize to [0, 1]
-    data = (data - in_low) / (in_high - in_low)
-    data = data * (out_high - out_low) + out_low
+    _ratio = (out_high - out_low) / (in_high - in_low)
+    data = data * _ratio + (out_low - in_low * _ratio)
+    # NOTE: A simplified version is:
+    # # Normalize to [0, 1]
+    # data = (data - in_low) / (in_high - in_low)
+    # data = data * (out_high - out_low) + out_low
 
     if out_dtype == "uint8":
         data = data.round().clip(0, 255)
