@@ -1,6 +1,6 @@
 [project]
 name = "dl-utils"
-version = "0.0.2"
+version = "0.2.0"
 description = ""
 readme = "README.md"
 license = { file = "LICENSE" }
