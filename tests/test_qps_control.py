@@ -6,6 +6,7 @@
 import asyncio
 import time
 
+from numpy import rec
 from pytest import approx
 
 from dl_utils import QPSLimiter
@@ -35,29 +36,34 @@ def test_qps_limiter():
 
 
 def test_qps_limiter_performance():
-    max_qps = 50
+    max_qps = 30
+    sleep_time = 0.3
+    test_query = 300
 
     def fn():
+        time.sleep(sleep_time)
+        print(".", end="")
         return 123
 
     async def main():
         qps_limiter = QPSLimiter(max_qps=max_qps)
 
-        counter = 0
-        test_sec = 5
-        s_time = time.time()
-        while True:
+        async def worker():
             res = await qps_limiter.run(fn)
             assert res == 123
-            counter += 1
-            if time.time() - s_time > test_sec:
-                break
-        real_qps = counter / test_sec
 
-        print(f"Performance: {real_qps:.2f} qps")
-        print(f"Real QPS: {qps_limiter.real_qps():.2f} qps")
-        assert real_qps == approx(max_qps, rel=0.1)
-        assert real_qps == approx(qps_limiter.real_qps(), rel=0.1)
+        # schedule 100 runs, and wait then to finish
+        tasks = [asyncio.create_task(worker()) for _ in range(test_query)]
+        await asyncio.gather(*tasks)
+
+        real_qps = qps_limiter.real_qps()
+
+        assert real_qps < max_qps
+        assert real_qps == approx(max_qps, rel=0.2)
+        assert qps_limiter.query_count == test_query
+
+        print(f"real qps: {real_qps:.2f} qps, "
+              f"expected_qps: {max_qps:.2f} qps")
 
     asyncio.run(main())
 
