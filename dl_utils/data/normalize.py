@@ -6,7 +6,8 @@
 
 __all__ = [
     "normalize",
-    "inv_normalize"
+    "inv_normalize",
+    "convert_image_video_range"
 ]
 
 import numpy as np
@@ -81,7 +82,7 @@ def normalize(
         return _normalize(data, mean, std)
     elif isinstance(data, torch.Tensor):
         # NOTE: Move std and mean to same device and convert to same dtype
-        mean, std = to_tensor(mean).to(data), to_tensor(std).to(data)
+        mean, std = to_tensor(mean, data), to_tensor(std, data)
         mean, std = _prepare_mean_std(mean, std, dim, len(data.shape))
         return _normalize(data, mean, std)
     else:
@@ -117,8 +118,76 @@ def inv_normalize(
         return _inv_normalize(data, mean, std)
     elif isinstance(data, torch.Tensor):
         # NOTE: Move std and mean to same device and convert to same dtype
-        mean, std = to_tensor(mean, to=data), to_tensor(std, to=data)
+        mean, std = to_tensor(mean, data), to_tensor(std, data)
         mean, std = _prepare_mean_std(mean, std, dim, len(data.shape))
         return _inv_normalize(data, mean, std)
     else:
         raise TypeError(f"Unsupported data type: {type(data)}")
+
+
+def convert_image_video_range(data: TorchOrNumpy, pattern: str):
+    """
+    Convert torch/numpy images/videos between flexible dtype and range.
+
+    Note:
+        - When converting from `uint8` to `-1_1` or `0_1`, the output will be float32.
+        - When converting between `-1_1` and `0_1`, the output will retain the same dtype as input.
+
+    Examples:
+
+        >>> img = np.array([[[0, 128, 255]]], dtype=np.uint8)
+        >>> convert_image_video_range(img, "uint8->0_1")
+        array([[[0.       , 0.5019608, 1.       ]]], dtype=float32)
+        >>> img = np.array([[[0.0, 0.5, 1.0]]], dtype=np.float32)
+        >>> convert_image_video_range(img, "0_1->uint8")
+        array([[[0, 128, 255]]], dtype=uint8)
+        >>> img = np.array([[[0.0, 0.5, 1.0]]], dtype=np.float32)
+        >>> convert_image_video_range(img, "0_1->-1_1")
+        array([[[-1.,  0.,  1.]]], dtype=float32)
+    """
+    RANGE_SPECS = {
+        "uint8": ("uint8", 0.0, 255.0),
+        "-1_1": ("float", -1.0, 1.0),
+        "0_1": ("float", 0.0, 1.0),
+    }
+    try:
+        in_spec, out_spec = [s.strip() for s in pattern.split("->")]
+    except:
+        raise ValueError(f"Invalid pattern: {pattern}")
+
+    if in_spec not in RANGE_SPECS or out_spec not in RANGE_SPECS:
+        raise ValueError(f"Unknown spec(s): {pattern}")
+
+    in_dtype, in_low, in_high = RANGE_SPECS[in_spec]
+    out_dtype, out_low, out_high = RANGE_SPECS[out_spec]
+
+    # check input dtype
+    if in_dtype == "uint8":
+        if isinstance(data, torch.Tensor):
+            assert not data.is_floating_point()
+        else:
+            assert np.issubdtype(data.dtype, np.integer)
+    elif in_dtype == "float":
+        if isinstance(data, torch.Tensor):
+            assert data.is_floating_point()
+        else:
+            assert np.issubdtype(data.dtype, np.floating)
+    else:
+        raise NotImplementedError(f"Unknown dtype: {in_dtype}")
+
+    if in_spec == out_spec:
+        return data  # If same, return directly
+
+    if in_dtype == "uint8":
+        data = data.astype(np.float32) if \
+            isinstance(data, np.ndarray) else data.to(torch.float32)
+
+    # Normalize to [0, 1]
+    data = (data - in_low) / (in_high - in_low)
+    data = data * (out_high - out_low) + out_low
+
+    if out_dtype == "uint8":
+        data = data.round().clip(0, 255)
+        return data.astype(np.uint8) if isinstance(data, np.ndarray) else data.to(torch.uint8)
+    else:
+        return data

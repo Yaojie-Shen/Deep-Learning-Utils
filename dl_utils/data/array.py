@@ -67,8 +67,20 @@ def to_original(array: ArrayLike, ori_dtype) -> ArrayLike:
         raise TypeError(f"Unsupported type: {ori_dtype}")
 
 
+def is_tensor(x):
+    """Is `torch.Tensor`"""
+    return isinstance(x, torch.Tensor)
+
+
+def is_ndarray(x):
+    """Is `np.ndarray`"""
+    return isinstance(x, np.ndarray)
+
+
 __all__ = [
     "to_numpy",
     "to_tensor",
     "to_original",
+    "is_tensor",
+    "is_ndarray",
 ]
