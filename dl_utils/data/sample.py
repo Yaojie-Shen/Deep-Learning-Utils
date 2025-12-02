@@ -5,13 +5,14 @@
 # @File    : sample.py
 
 from collections.abc import Sequence
-from typing import Union, List, Any
+from typing import Any, List, Optional, Union
 
 import numpy as np
 
 try:
     import torch
 except ImportError:
+    # These functions can work without torch
     torch = None
 
 
@@ -91,9 +92,11 @@ def sample_randomly(
         if seed is not None:
             generator.manual_seed(seed)
         if put_back:
-            indices = torch.randint(0, input_data.size(0), (n,), generator=generator)
+            indices = torch.randint(
+                0, input_data.size(0), (n,), generator=generator)
         else:
-            indices = torch.randperm(input_data.size(0), generator=generator)[:n]
+            indices = torch.randperm(
+                input_data.size(0), generator=generator)[:n]
         if ordered:
             indices, _ = torch.sort(indices)
         return input_data[indices]
@@ -108,7 +111,34 @@ def sample_randomly(
         return [input_data[i] for i in indices]
 
 
+def sample_contiguous(
+        input_data: Union[List[Any], np.ndarray, 'torch.Tensor', Sequence[Any]],
+        n: int, seed: Optional[int] = None
+):
+    """
+    Randomly sample a contiguous slice of length n from input_data.
+
+    Args:
+        input_data: List, numpy array, or torch tensor to sample from.
+        n: Length of the contiguous sequence to sample.
+        seed: Random seed for reproducibility.
+
+    Returns:
+        A contiguous slice of length n from input_data, in the same type as input_data.
+    """
+    assert 0 <= n <= len(input_data), \
+        f"The length of the slice must be between 0 and {len(input_data)}, but got {n}."
+
+    if n == 0:
+        return input_data[:0]
+
+    rng = np.random.default_rng(seed)
+    start = rng.integers(0, len(input_data) - n + 1)
+    return input_data[start:start+n]
+
+
 __all__ = [
     "sample_evenly",
-    "sample_randomly"
+    "sample_randomly",
+    "sample_contiguous",
 ]
