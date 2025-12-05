@@ -127,5 +127,38 @@ def test_sample_contiguous(input_data, n):
     assert isinstance(out, type(input_data))
 
 
+@pytest.mark.parametrize("func,kwargs", [
+    (sample_evenly,     {"n": 4, }),                # even sampling
+    (sample_randomly,   {"n": 4, "seed": 42}),    # random sampling
+    (sample_contiguous, {"n": 4, "seed": 42}),    # contiguous random sampling
+])
+@pytest.mark.parametrize("input_data", [
+    list(range(100)),
+    np.arange(100),
+    pytest.param(torch.arange(100))
+])
+def test_seed_reproducibility(func, kwargs, input_data):
+    """
+    Ensure that using the same random seed produces the same output
+    across multiple runs for all sampling functions.
+    """
+
+    # Convert kwargs to avoid mutating shared dictionaries across parameter sets
+    local_kwargs = dict(kwargs)
+
+    # First call
+    out1 = func(input_data, **local_kwargs)
+    # Second call
+    out2 = func(input_data, **local_kwargs)
+
+    # Convert outputs for numerical comparison if needed
+    if isinstance(out1, np.ndarray):
+        assert np.array_equal(out1, out2)
+    elif torch and isinstance(out1, torch.Tensor):
+        assert torch.equal(out1, out2)
+    else:
+        assert out1 == out2
+
+
 if __name__ == '__main__':
     pytest.main()
