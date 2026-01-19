@@ -10,6 +10,7 @@ from ..import_utils import _LazyModule, define_import_structure
 
 if TYPE_CHECKING:
     from .array import *
+    from .download import *
     from .image import *
     from .json import *
     from .lmdb import *
