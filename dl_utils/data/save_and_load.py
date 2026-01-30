@@ -37,7 +37,7 @@ def save_json(data, file, save_pretty=False, **kwargs):
 
     _kwargs = {"cls": MyEncoder}
     if save_pretty:
-        _kwargs.update({"indent": 4, "sort_keys": True})
+        _kwargs.update({"indent": 4, "ensure_ascii": False})
     _kwargs.update(kwargs)
 
     with open(file, "w") as fp:
@@ -67,7 +67,7 @@ def save_bytes(data: bytes, file):
 
 def load_bytes(file) -> bytes:
     with open(file, "rb") as fp:
-       return fp.read()
+        return fp.read()
 
 
 __all__ = [
