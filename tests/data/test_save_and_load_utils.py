@@ -14,6 +14,8 @@ from dl_utils import (
     load_json,
     save_pickle,
     load_pickle,
+    save_bytes,
+    load_bytes
 )
 
 
@@ -75,3 +77,15 @@ def test_save_and_load_pickle():
         loaded = load_pickle(str(f))
 
         assert loaded == obj
+
+
+def test_save_and_load_bytes():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        base = Path(tmpdir)
+        f = base / "data.bin"
+
+        data = b"\x00\x01\x02\x03\x04"
+        save_bytes(data, str(f))
+        loaded = load_bytes(str(f))
+
+        assert loaded == data

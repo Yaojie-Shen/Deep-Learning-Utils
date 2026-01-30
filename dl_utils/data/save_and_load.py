@@ -59,6 +59,17 @@ def load_pickle(file):
         return pickle.load(fp)
 
 
+def save_bytes(data: bytes, file):
+    Path(file).parent.mkdir(parents=True, exist_ok=True)
+    with open(file, "wb") as fp:
+        fp.write(data)
+
+
+def load_bytes(file) -> bytes:
+    with open(file, "rb") as fp:
+       return fp.read()
+
+
 __all__ = [
     "save_text",
     "load_text",
@@ -66,4 +77,6 @@ __all__ = [
     "load_json",
     "save_pickle",
     "load_pickle",
+    "save_bytes",
+    "load_bytes",
 ]
