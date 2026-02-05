@@ -12,6 +12,7 @@ if TYPE_CHECKING:
     from .data import *
     from .distributed import *
     from .fs import *
+    from .inference import *
     from .visualize import *
 
     from .decorators import *
@@ -20,7 +21,6 @@ if TYPE_CHECKING:
     from .inspect_data_utils import *
     from .memory_utils import *
     from .prefetcher import *
-    from .qps_control import *
     from .timer import *
     from .type_hint import *
 else:

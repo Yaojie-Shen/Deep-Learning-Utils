@@ -6,18 +6,17 @@
 import asyncio
 import time
 
-from numpy import rec
 from pytest import approx
 
 from dl_utils import QPSLimiter
 
 
 def test_qps_limiter():
-    max_qps = 5
+    max_qps = 10
     max_iter = 10
 
     def fn():
-        print(f"Current: {time.time()}")
+        # print(f"Current: {time.time()}")
         return 123
 
     async def main():
@@ -36,9 +35,9 @@ def test_qps_limiter():
 
 
 def test_qps_limiter_performance():
-    max_qps = 30
-    sleep_time = 0.3
-    test_query = 300
+    max_qps = 1000
+    sleep_time = 0.1
+    test_query = max_qps * 5
 
     def fn():
         time.sleep(sleep_time)
@@ -69,22 +68,25 @@ def test_qps_limiter_performance():
 
 
 def test_qps_limiter_peak_performance():
+    test_query = 1000
+    sleep_time = 0.1
+
     def fn():
+        time.sleep(sleep_time)
         return 123
 
     async def main():
-        qps_limiter = QPSLimiter(max_qps=999999)
+        qps_limiter = QPSLimiter(max_qps=9999)
 
-        counter = 0
-        test_sec = 5
+        # Schedule runs and wait for them to finish
         s_time = time.time()
-        while True:
-            res = await qps_limiter.run(fn)
-            assert res == 123
-            counter += 1
-            if time.time() - s_time > test_sec:
-                break
-        print(f"Performance: {counter / test_sec:.2f} qps")
+        results = [qps_limiter.run(fn) for _ in range(test_query)]
+        await asyncio.gather(*results)
+
+        e_time = time.time()
+
+        print(f"Took {e_time - s_time:.2f} seconds for {test_query} queries")
+        print(f"Performance: {len(results) / (e_time - s_time) :.2f} qps")
 
     asyncio.run(main())
 

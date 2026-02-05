@@ -40,8 +40,10 @@ def save_json(data, file, save_pretty=False, **kwargs):
         _kwargs.update({"indent": 4, "ensure_ascii": False})
     _kwargs.update(kwargs)
 
+    # Dump to string first to avoid writing if error occurs
+    s = json.dumps(data, **_kwargs)
     with open(file, "w") as fp:
-        json.dump(data, fp, **_kwargs)
+        fp.write(s)
 
 
 def load_json(file):
