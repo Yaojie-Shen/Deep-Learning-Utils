@@ -9,6 +9,7 @@ from typing import TYPE_CHECKING
 from ..import_utils import _LazyModule, define_import_structure
 
 if TYPE_CHECKING:
+    from .llm_utils import *
     from .ollama_utils import *
     from .qps_control import *
     from .ray_inference_utils import *
