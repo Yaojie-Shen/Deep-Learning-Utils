@@ -42,6 +42,7 @@ def save_json(data, file, save_pretty=False, **kwargs):
 
     # Dump to string first to avoid writing if error occurs
     s = json.dumps(data, **_kwargs)
+    Path(file).parent.mkdir(parents=True, exist_ok=True)
     with open(file, "w") as fp:
         fp.write(s)
 
@@ -52,6 +53,7 @@ def load_json(file):
 
 
 def save_pickle(obj, file):
+    Path(file).parent.mkdir(parents=True, exist_ok=True)
     with open(file, 'wb') as fp:
         pickle.dump(obj, fp)
 
