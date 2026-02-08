@@ -54,13 +54,13 @@ class QPSLimiter:
             await asyncio.sleep(0.01)  # coarse sleep to reduce event-loop overhead
             now = time.perf_counter()
             elapsed = now - last_time
-            last_time = now
 
             # Calculate how many tokens should be added
             add_tokens = int(elapsed * self.qps)
             if add_tokens <= 0:
                 continue
 
+            last_time = now
             async with self.lock:
                 self.tokens = min(self.qps, self.tokens + add_tokens)
 

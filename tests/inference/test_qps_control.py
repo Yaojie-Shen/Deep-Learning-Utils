@@ -6,7 +6,7 @@
 import asyncio
 import time
 
-from pytest import approx
+from pytest import approx, param, mark
 
 from dl_utils import QPSLimiter
 
@@ -34,14 +34,22 @@ def test_qps_limiter():
     asyncio.run(main())
 
 
-def test_qps_limiter_performance():
-    max_qps = 1000
+@mark.parametrize(
+    "max_qps, test_query",
+    [
+        param(0.5, 4),
+        param(1, 2),
+        param(10, 20),
+        param(100, 200),
+        param(1000, 2000)
+    ]
+)
+def test_qps_limiter_performance(max_qps, test_query):
     sleep_time = 0.1
-    test_query = max_qps * 5
 
     def fn():
-        time.sleep(sleep_time)
         print(".", end="")
+        time.sleep(sleep_time)
         return 123
 
     async def main():
