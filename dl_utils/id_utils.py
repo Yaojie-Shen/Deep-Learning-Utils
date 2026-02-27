@@ -36,7 +36,8 @@ def list_ids(
         exclude: str | re.Pattern | list[re.Pattern] = None,
         matching: str | re.Pattern = "auto",
         return_filepath: bool = False,
-) -> list[str] | tuple[list[str], list[str]]:
+        return_dict: bool = False,
+) -> list[str] | tuple[list[str], list[str]] | dict[str, str]:
     """
     Extract sample IDs from file or folder names under given root paths.
 
@@ -46,6 +47,7 @@ def list_ids(
         exclude: Patterns to exclude files/folders in directory.
         matching: Patterns to extract IDs from file/folder names. If "auto", use common patterns: for files use the full name without extension, for folders use the full folder name.
         return_filepath: Whether to return the full file/folder paths along with IDs.
+        return_dict: Whether to return a dictionary mapping IDs to file/folder paths. Only effective when return_filepath is True.
 
     Returns: A list of extracted IDs, or a tuple of (IDs, file/folder paths) if return_filepath is True.
     """
@@ -104,6 +106,9 @@ def list_ids(
 
             ids.append(sample_id)
             paths.append(str(item.resolve()))
+
+    if return_dict:
+        return {id_: path for id_, path in zip(ids, paths)}
 
     return (ids, paths) if return_filepath else ids
 

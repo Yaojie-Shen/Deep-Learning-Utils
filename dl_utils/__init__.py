@@ -15,6 +15,7 @@ if TYPE_CHECKING:
     from .inference import *
     from .visualize import *
 
+    from .chunk_utils import *
     from .decorators import *
     from .global_cache_utils import *
     from .id_utils import *
