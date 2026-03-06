@@ -17,6 +17,7 @@ if TYPE_CHECKING:
 
     from .chunk_utils import *
     from .decorators import *
+    from .env_utils import *
     from .global_cache_utils import *
     from .id_utils import *
     from .inspect_data_utils import *
