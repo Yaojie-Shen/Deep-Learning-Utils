@@ -11,7 +11,7 @@ from pathlib import Path
 def _normalize_newlines(value: str, allow_multiline: bool) -> str:
     """Normalize or strip newlines from a string.
 
-    - If allow_multiline is False, all line breaks ("\r", "\n") are removed so a single-line string is returned.
+    - If allow_multiline is False, only the first line is returned, with all line breaks removed.
     - If allow_multiline is True, preserve multiple lines but normalize to "\n" line endings.
     """
     if allow_multiline:
@@ -19,15 +19,16 @@ def _normalize_newlines(value: str, allow_multiline: bool) -> str:
         return value.replace("\r\n", "\n").replace("\r", "\n")
     else:
         # Remove all line breaks entirely to return a single line string
-        return "".join(value.splitlines())
+        return value.splitlines()[0]
 
 
 def get_env(name: str, allow_multiline: bool = False, cwd: str | Path | None = None) -> str:
     """Get a secret or config value from environment or a dotfile in the working directory.
 
     Lookup order (later overwrites earlier if both exist):
-    1) Environment variable `name`.
+    1) A file named `{name}` under the current working directory (or `cwd` if provided).
     2) A file named `.{name}` under the current working directory (or `cwd` if provided).
+    3) Environment variable `name`.
 
     By default, the returned string contains no line breaks. Set `allow_multiline=True` to preserve
     multiple lines (line endings normalized to ``\n``).
@@ -44,20 +45,24 @@ def get_env(name: str, allow_multiline: bool = False, cwd: str | Path | None = N
         KeyError: If the value is not found in either the environment or the `.{name}` file.
     """
 
-    # 1) Read from environment
-    chosen: str | None = os.environ.get(name)
-
-    # 2) Read from ./{name} file and overwrite if present
     workdir = Path(cwd) if cwd is not None else Path.cwd()
-    file_path = workdir / f".{name}"
-    if file_path.exists() and file_path.is_file():
-        file_text = file_path.read_text(encoding="utf-8")
-        chosen = file_text
+
+    # Check files in priority order: {name}, then .{name}
+    for filename in (name, f".{name}"):
+        path = workdir / filename
+        if path.is_file():
+            return _normalize_newlines(
+                path.read_text(encoding="utf-8"),
+                allow_multiline=allow_multiline,
+            )
+
+    # Finally check environment variable
+    chosen = os.environ.get(name)
 
     if chosen is None:
         raise KeyError(
-            f"'{name}' not found in environment or file '{file_path}'. "
-            f"Set env var {name} or create a file '{file_path.name}' in {workdir}."
+            f"'{name}' not found in environment or files '{workdir / name}' or '{workdir / f'.{name}'}'. "
+            f"Set env var {name} or create a file '{name}' or '.{name}' in {workdir}."
         )
 
     return _normalize_newlines(chosen, allow_multiline=allow_multiline)
@@ -66,4 +71,3 @@ def get_env(name: str, allow_multiline: bool = False, cwd: str | Path | None = N
 __all__ = [
     "get_env",
 ]
-

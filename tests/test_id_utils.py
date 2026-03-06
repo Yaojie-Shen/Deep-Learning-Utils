@@ -91,3 +91,16 @@ def test_list_ids_return_filepaths_with_tempfile():
         assert sorted(ids) == ["01", "02"]
         assert len(ids) == len(paths)
         assert all(p.endswith(".txt") for p in paths)
+
+        # --- return dict ---
+        id2path = list_ids(
+            str(root),
+            matching=r"x_(\d+)",
+            return_filepath=True,
+            return_dict=True,
+        )
+        print(id2path)
+
+        assert sorted(id2path.keys()) == ["01", "02"]
+        assert len(id2path) == len(ids)
+        assert all(p.endswith(".txt") for p in id2path.values())

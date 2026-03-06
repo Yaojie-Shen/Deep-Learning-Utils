@@ -4,7 +4,6 @@
 # @Project : Deep-Learning-Utils
 # @File    : test_env_utils.py
 
-import tempfile
 from pathlib import Path
 
 import pytest
@@ -12,68 +11,33 @@ import pytest
 from dl_utils.env_utils import get_env
 
 
-def test_get_env_from_env_when_no_file(monkeypatch):
-    with tempfile.TemporaryDirectory() as tmp:
-        workdir = Path(tmp)
+def test_env_used_when_no_files(tmp_path, monkeypatch):
+    monkeypatch.setenv("API_TOKEN", "line1\r\nline2\rline3\n")
 
-        # Ensure file does not exist
-        target = workdir / ".API_TOKEN"
-        assert not target.exists()
-
-        # Set env var only
-        monkeypatch.setenv("API_TOKEN", "line1\r\nline2\rline3\n")
-
-        # Default: single-line result (strip all line breaks)
-        assert get_env("API_TOKEN", cwd=workdir) == "line1line2line3"
-
-        # Preserve multiple lines and normalize to \n
-        assert get_env("API_TOKEN", allow_multiline=True, cwd=workdir) == "line1\nline2\nline3\n"
+    assert get_env("API_TOKEN", cwd=tmp_path) == "line1"
+    assert get_env("API_TOKEN", allow_multiline=True, cwd=tmp_path) == "line1\nline2\nline3\n"
 
 
-def test_get_env_prefers_file_over_env(monkeypatch):
-    """
-    Directory layout:
+def test_dotfile_overrides_env(tmp_path, monkeypatch):
+    monkeypatch.setenv("MYSECRET", "env-value")
 
-    tmp/
-        .MYSECRET  (file content should override environment)
-    """
-    with tempfile.TemporaryDirectory() as tmp:
-        workdir = Path(tmp)
+    (tmp_path / ".MYSECRET").write_text("file\nvalue\r\nline2", encoding="utf-8")
 
-        # Set env var first
-        monkeypatch.setenv("MYSECRET", "env-value")
-
-        # Create the dotfile which should take precedence
-        (workdir / ".MYSECRET").write_text("file\nvalue\r\nline2", encoding="utf-8")
-
-        # Multiline preserved and normalized
-        assert get_env("MYSECRET", allow_multiline=True, cwd=workdir) == "file\nvalue\nline2"
-
-        # Single-line (no line breaks)
-        assert get_env("MYSECRET", allow_multiline=False, cwd=workdir) == "filevalueline2"
+    assert get_env("MYSECRET", allow_multiline=True, cwd=tmp_path) == "file\nvalue\nline2"
+    assert get_env("MYSECRET", allow_multiline=False, cwd=tmp_path) == "file"
 
 
-def test_get_env_missing_raises(monkeypatch):
-    with tempfile.TemporaryDirectory() as tmp:
-        workdir = Path(tmp)
-        # Make sure env is absent and no file exists
-        monkeypatch.delenv("NOT_EXISTS_KEY", raising=False)
-        assert not (workdir / ".NOT_EXISTS_KEY").exists()
+def test_plain_file_has_highest_priority(tmp_path, monkeypatch):
+    monkeypatch.setenv("TOKEN", "env")
 
-        with pytest.raises(KeyError):
-            _ = get_env("NOT_EXISTS_KEY", cwd=workdir)
+    (tmp_path / ".TOKEN").write_text("dot", encoding="utf-8")
+    (tmp_path / "TOKEN").write_text("plain", encoding="utf-8")
+
+    assert get_env("TOKEN", cwd=tmp_path) == "plain"
 
 
-def test_get_env_cwd_resolution(monkeypatch):
-    with tempfile.TemporaryDirectory() as tmp:
-        workdir = Path(tmp)
+def test_missing_key_raises(tmp_path, monkeypatch):
+    monkeypatch.delenv("NOT_EXISTS_KEY", raising=False)
 
-        # No env var set
-        monkeypatch.delenv("FOO", raising=False)
-
-        # Read from provided cwd
-        (workdir / ".FOO").write_text("bar\n", encoding="utf-8")
-
-        assert get_env("FOO", cwd=workdir) == "bar"
-        assert get_env("FOO", allow_multiline=True, cwd=workdir) == "bar\n"
-
+    with pytest.raises(KeyError):
+        get_env("NOT_EXISTS_KEY", cwd=tmp_path)
