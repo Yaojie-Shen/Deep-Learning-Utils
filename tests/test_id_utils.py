@@ -8,7 +8,7 @@ import re
 import tempfile
 from pathlib import Path
 
-from dl_utils import list_ids
+from dl_utils import generate_id, list_ids
 
 
 def test_list_ids_with_tempfile():
@@ -104,3 +104,23 @@ def test_list_ids_return_filepaths_with_tempfile():
         assert sorted(id2path.keys()) == ["01", "02"]
         assert len(id2path) == len(ids)
         assert all(p.endswith(".txt") for p in id2path.values())
+
+
+def test_generate_id_random_mode():
+    # --- random mode ---
+    ids = [generate_id() for _ in range(100)]
+    print(f"Random ids {ids}")
+    assert len(set(ids)) == len(ids)
+    assert all(re.fullmatch(r"[0-9a-f]{32}", x) for x in ids)
+
+
+def test_generate_id_deterministic_mode():
+    # --- deterministic mode ---
+    a1 = generate_id("hello")
+    a2 = generate_id("hello")
+    b = generate_id("world")
+
+    print(f"{a1}=={a2} {a1}!={b}")
+    assert a1 == a2
+    assert a1 != b
+    assert re.fullmatch(r"[0-9a-f]{32}", a1)

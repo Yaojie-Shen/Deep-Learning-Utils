@@ -5,6 +5,8 @@
 # @File    : id_utils.py
 import re
 import os
+import hashlib
+import uuid
 from pathlib import Path
 from typing import Iterable
 
@@ -143,6 +145,29 @@ def list_ids(
     return (ids, paths) if return_filepath else ids
 
 
+def generate_id(seed: str | None = None) -> str:
+    """Generate a sample ID.
+
+    Two modes:
+    - `seed is None`: generate a random ID (UUIDv4).
+    - `seed is not None`: generate a deterministic ID from the input string (hash).
+
+    Args:
+        seed: Seed string used for deterministic ID generation. If None, return a random ID.
+
+    Returns:
+        A 32-character lowercase hex string.
+    """
+    if seed is None:
+        # UUIDv4: 122 bits of randomness; collision probability is negligible for practical use.
+        return uuid.uuid4().hex
+
+    # Deterministic ID from input string.
+    h = hashlib.blake2b(seed.encode("utf-8"), digest_size=16)
+    return h.hexdigest()
+
+
 __all__ = [
-    "list_ids"
+    "list_ids",
+    "generate_id",
 ]
