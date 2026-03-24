@@ -36,6 +36,7 @@ def list_ids(
         include: str | re.Pattern | list[re.Pattern] = "auto",
         exclude: str | re.Pattern | list[re.Pattern] = None,
         matching: str | re.Pattern = "auto",
+        simple: bool = True,
         return_filepath: bool = False,
         return_dict: bool = False,
 ) -> list[str] | tuple[list[str], list[str]] | dict[str, str]:
@@ -47,6 +48,7 @@ def list_ids(
         include: Patterns to include files/folders in directory. If "auto", include all files if there are more files than folders, else include all folders.
         exclude: Patterns to exclude files/folders in directory.
         matching: Patterns to extract IDs from file/folder names. If "auto", use common patterns: for files use the full name without extension, for folders use the full folder name.
+        simple: If True, use `os.listdir` and treat entries with a suffix as files (heuristic). This avoids filesystem stat calls and is faster on large NFS directories.
         return_filepath: Whether to return the full file/folder paths along with IDs.
         return_dict: Whether to return a dictionary mapping IDs to file/folder paths. Only effective when return_filepath is True.
 
@@ -66,22 +68,32 @@ def list_ids(
         if not root.exists():
             continue
 
-        # Use scandir to avoid repeated stat calls (very costly on NFS with many entries).
         entries: list[tuple[str, str, bool, bool]] = []  # (name, path, is_file, is_dir)
-        try:
-            with os.scandir(root) as it:
-                for de in it:
-                    try:
-                        is_file = de.is_file()
-                    except OSError:
-                        is_file = False
-                    try:
-                        is_dir = de.is_dir()
-                    except OSError:
-                        is_dir = False
-                    entries.append((de.name, de.path, is_file, is_dir))
-        except OSError:
-            continue
+        if simple:
+            # Heuristic mode: classify by whether the name has a suffix.
+            try:
+                for name in os.listdir(root):
+                    is_file = bool(Path(name).suffix)
+                    is_dir = not is_file
+                    entries.append((name, str(root / name), is_file, is_dir))
+            except OSError:
+                continue
+        else:
+            # Accurate mode: scandir + is_file/is_dir (may stat). Still much faster than Path.is_file per entry.
+            try:
+                with os.scandir(root) as it:
+                    for de in it:
+                        try:
+                            is_file = de.is_file()
+                        except OSError:
+                            is_file = False
+                        try:
+                            is_dir = de.is_dir()
+                        except OSError:
+                            is_dir = False
+                        entries.append((de.name, de.path, is_file, is_dir))
+            except OSError:
+                continue
 
         if not entries:
             continue
@@ -121,8 +133,9 @@ def list_ids(
 
             ids.append(sample_id)
             if paths is not None:
-                # Only resolve paths when requested.
-                paths.append(str(Path(path_str).resolve()))
+                p = Path(path_str)
+                # In simple mode we avoid resolve() to prevent extra filesystem access on NFS.
+                paths.append(str(p.absolute() if simple else p.resolve()))
 
     if return_dict:
         return {id_: path for id_, path in zip(ids, paths)}  # type: ignore[arg-type]
