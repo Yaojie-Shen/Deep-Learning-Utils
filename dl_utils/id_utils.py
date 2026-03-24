@@ -4,6 +4,7 @@
 # @Project : Deep-Learning-Utils
 # @File    : id_utils.py
 import re
+import os
 from pathlib import Path
 from typing import Iterable
 
@@ -54,19 +55,39 @@ def list_ids(
     roots = [Path(r) for r in _as_list(roots)]
     exclude_patterns = _compile_patterns(exclude)
 
+    pattern = None
+    if matching != "auto":
+        pattern = matching if isinstance(matching, re.Pattern) else re.compile(matching)
+
     ids: list[str] = []
-    paths: list[str] = []
+    paths: list[str] | None = [] if (return_filepath or return_dict) else None
 
     for root in roots:
         if not root.exists():
             continue
 
-        entries = list(root.iterdir())
+        # Use scandir to avoid repeated stat calls (very costly on NFS with many entries).
+        entries: list[tuple[str, str, bool, bool]] = []  # (name, path, is_file, is_dir)
+        try:
+            with os.scandir(root) as it:
+                for de in it:
+                    try:
+                        is_file = de.is_file()
+                    except OSError:
+                        is_file = False
+                    try:
+                        is_dir = de.is_dir()
+                    except OSError:
+                        is_dir = False
+                    entries.append((de.name, de.path, is_file, is_dir))
+        except OSError:
+            continue
+
         if not entries:
             continue
 
-        files = [e for e in entries if e.is_file()]
-        dirs = [e for e in entries if e.is_dir()]
+        files = [e for e in entries if e[2]]
+        dirs = [e for e in entries if e[3]]
 
         # --- auto include logic ---
         if include == "auto":
@@ -76,8 +97,7 @@ def list_ids(
             candidates = entries
             include_patterns = _compile_patterns(include)
 
-        for item in candidates:
-            name = item.name
+        for name, path_str, is_file, is_dir in candidates:
 
             # include filter
             if include_patterns and not _matches_any(name, include_patterns):
@@ -89,26 +109,23 @@ def list_ids(
 
             # --- ID extraction ---
             if matching == "auto":
-                if item.is_file():
-                    sample_id = item.stem
+                if is_file:
+                    sample_id = Path(name).stem
                 else:
                     sample_id = name
             else:
-                pattern = (
-                    matching
-                    if isinstance(matching, re.Pattern)
-                    else re.compile(matching)
-                )
-                m = pattern.search(name)
+                m = pattern.search(name)  # type: ignore[union-attr]
                 if not m:
                     continue
                 sample_id = m.group(1) if m.groups() else m.group(0)
 
             ids.append(sample_id)
-            paths.append(str(item.resolve()))
+            if paths is not None:
+                # Only resolve paths when requested.
+                paths.append(str(Path(path_str).resolve()))
 
     if return_dict:
-        return {id_: path for id_, path in zip(ids, paths)}
+        return {id_: path for id_, path in zip(ids, paths)}  # type: ignore[arg-type]
 
     return (ids, paths) if return_filepath else ids
 
