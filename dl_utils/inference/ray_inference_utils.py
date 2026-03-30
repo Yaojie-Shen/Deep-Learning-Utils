@@ -7,25 +7,34 @@
 import logging
 import threading
 import time
-from queue import Queue, Empty
-from typing import List, Callable
+from queue import Empty, Queue
+from typing import Callable, List
 
 import ray
 
 logger = logging.getLogger(__name__)
 
 
-class Scheduler:
+class RayActorScheduler:
     """
     A high-performance load balanced scheduler for Ray actors.
     Balance the load of multiple Ray actors using token bucket.
+
+    Args:
+        actors: A list of Ray actor handles to schedule work onto.
+        actor_fn: A callable that takes an actor handle plus user-provided
+            `*args/**kwargs` and submits a Ray task (typically an actor method
+            call). It **must** return a `ray.ObjectRef` representing the
+            submitted task.
+        queue_max_size: Token bucket size per actor. Effectively caps the
+            number of in-flight tasks allowed per actor to this value.
     """
 
     def __init__(
-            self,
-            actors: List[ray.actor.ActorHandle],
-            actor_fn: Callable[[ray.actor.ActorHandle, ...], ray.ObjectRef],
-            queue_max_size: int = 4
+        self,
+        actors: List[ray.actor.ActorHandle],
+        actor_fn: Callable[[ray.actor.ActorHandle, ...], ray.ObjectRef],
+        queue_max_size: int = 4,
     ):
         self.actors = actors
         self.actor_fn = actor_fn
@@ -42,15 +51,18 @@ class Scheduler:
                 self.actor_queue.put(actor)
 
         # Monitor task status in background to add token back to the bucket
-        self._monitor_thread = threading.Thread(target=self._background_monitor, daemon=True)
+        self._monitor_thread = threading.Thread(
+            target=self._background_monitor, daemon=True
+        )
         self._monitor_thread.start()
 
     def submit(self, *args, **kwargs):
         s_time = time.time()
         actor = self.actor_queue.get()  # wait for available actor
         obj_ref = self.actor_fn(actor, *args, **kwargs)
-        assert isinstance(obj_ref, ray.ObjectRef), \
+        assert isinstance(obj_ref, ray.ObjectRef), (
             f"The actor_fn should return a ray.ObjectRef, but got {type(obj_ref)}"
+        )
         self.pending_ref_queue.put((obj_ref, actor))
         logger.debug(f"Schedule task took {time.time() - s_time:.6f}s")
         return obj_ref
@@ -79,4 +91,4 @@ class Scheduler:
         self._monitor_thread.join()
 
 
-__all__ = ["Scheduler"]
+__all__ = ["RayActorScheduler"]
