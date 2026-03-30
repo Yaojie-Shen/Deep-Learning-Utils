@@ -25,7 +25,7 @@ class _JsonBytesEncoder(json.JSONEncoder):
 
     def default(self, obj):
         if isinstance(obj, bytes):  # bytes->str
-            return str(obj, encoding='utf-8')
+            return str(obj, encoding="utf-8")
         return json.JSONEncoder.default(self, obj)
 
 
@@ -74,12 +74,52 @@ def save_jsonl(data, file, **kwargs):
 
 
 def iter_jsonl(file):
-    with open(file, "r") as fp:
-        for line in fp:
-            line = line.strip()
-            if not line:
-                continue
-            yield json.loads(line)
+    class _JsonlIterable:
+        def __init__(self, file_path):
+            self.file_path = file_path
+            self._offsets = None
+
+        def _ensure_offsets(self):
+            if self._offsets is not None:
+                return
+            offsets = []
+            with open(self.file_path, "r") as fp:
+                while True:
+                    pos = fp.tell()
+                    line = fp.readline()
+                    if not line:
+                        break
+                    if line.strip():
+                        offsets.append(pos)
+            self._offsets = offsets
+
+        def __iter__(self):
+            with open(self.file_path, "r") as fp:
+                for line in fp:
+                    line = line.strip()
+                    if not line:
+                        continue
+                    yield json.loads(line)
+
+        def __len__(self):
+            self._ensure_offsets()
+            return len(self._offsets)
+
+        def __getitem__(self, index):
+            if not isinstance(index, int):
+                raise TypeError("index must be int")
+            if index < 0:
+                raise IndexError("negative index is not supported")
+            self._ensure_offsets()
+            if index >= len(self._offsets):
+                raise IndexError("index out of range")
+
+            with open(self.file_path, "r") as fp:
+                fp.seek(self._offsets[index])
+                line = fp.readline()
+                return json.loads(line)
+
+    return _JsonlIterable(file)
 
 
 def load_jsonl(file):
@@ -88,12 +128,12 @@ def load_jsonl(file):
 
 def save_pickle(obj, file):
     Path(file).parent.mkdir(parents=True, exist_ok=True)
-    with open(file, 'wb') as fp:
+    with open(file, "wb") as fp:
         pickle.dump(obj, fp)
 
 
 def load_pickle(file):
-    with open(file, 'rb') as fp:
+    with open(file, "rb") as fp:
         return pickle.load(fp)
 
 

@@ -6,6 +6,8 @@
 import tempfile
 from pathlib import Path
 
+from tqdm import tqdm
+
 from dl_utils import (iter_jsonl, load_bytes, load_json, load_jsonl,
                       load_pickle, load_text, save_bytes, save_json,
                       save_jsonl, save_pickle, save_text)
@@ -88,11 +90,16 @@ def test_iter_jsonl():
         base = Path(tmpdir)
         f = base / "data.jsonl"
 
-        f.write_text("{\"a\": 1}\n\n{\"a\": 2}\n")
+        f.write_text('{"a": 1}\n\n{"a": 2}\n')
 
         it = iter_jsonl(str(f))
-        assert iter(it) is it
+        assert len(it) == 2
+        assert it[0] == {"a": 1}
+        assert it[1] == {"a": 2}
         assert list(it) == [{"a": 1}, {"a": 2}]
+
+        tqdm_items = list(tqdm(iter_jsonl(str(f))))
+        assert tqdm_items == [{"a": 1}, {"a": 2}]
 
 
 def test_save_and_load_pickle():
