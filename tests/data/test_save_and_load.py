@@ -6,8 +6,9 @@
 import tempfile
 from pathlib import Path
 
-from dl_utils import (load_bytes, load_json, load_pickle, load_text,
-                      save_bytes, save_json, save_pickle, save_text)
+from dl_utils import (iter_jsonl, load_bytes, load_json, load_jsonl,
+                      load_pickle, load_text, save_bytes, save_json,
+                      save_jsonl, save_pickle, save_text)
 
 
 def test_save_and_load_text():
@@ -53,6 +54,45 @@ def test_save_json_pretty():
         # pretty option should produce newlines and indentation
         assert "\n" in content
         assert "    " in content or "\t" in content
+
+
+def test_save_and_load_jsonl_with_bytes():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        base = Path(tmpdir)
+        f = base / "data.jsonl"
+
+        data = [{"num": 1, "b": b"bytes"}, {"num": 2, "lst": [1, 2, 3]}]
+        save_jsonl(data, str(f))
+        loaded = load_jsonl(str(f))
+
+        assert loaded[0]["num"] == 1
+        assert loaded[0]["b"] == "bytes"
+        assert loaded[1]["num"] == 2
+        assert loaded[1]["lst"] == [1, 2, 3]
+
+
+def test_save_jsonl_rejects_newlines():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        base = Path(tmpdir)
+        f = base / "data.jsonl"
+
+        try:
+            save_jsonl([{"a": 1}], str(f), indent=2)
+            assert False, "Expected ValueError due to newline in JSONL line"
+        except ValueError as exc:
+            assert "indent" in str(exc)
+
+
+def test_iter_jsonl():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        base = Path(tmpdir)
+        f = base / "data.jsonl"
+
+        f.write_text("{\"a\": 1}\n\n{\"a\": 2}\n")
+
+        it = iter_jsonl(str(f))
+        assert iter(it) is it
+        assert list(it) == [{"a": 1}, {"a": 2}]
 
 
 def test_save_and_load_pickle():

@@ -20,6 +20,15 @@ def load_text(file) -> str:
         return fp.read()
 
 
+class _JsonBytesEncoder(json.JSONEncoder):
+    """Object of type bytes is not JSON serializable, convert it to string before saving"""
+
+    def default(self, obj):
+        if isinstance(obj, bytes):  # bytes->str
+            return str(obj, encoding='utf-8')
+        return json.JSONEncoder.default(self, obj)
+
+
 def save_json(data, file, save_pretty=False, **kwargs):
     """Save json to file.
 
@@ -27,15 +36,7 @@ def save_json(data, file, save_pretty=False, **kwargs):
     - Extra keyword arguments forwarded to `json.dump`.
     """
 
-    class MyEncoder(json.JSONEncoder):
-        """Object of type bytes is not JSON serializable, convert it to string before saving"""
-
-        def default(self, obj):
-            if isinstance(obj, bytes):  # bytes->str
-                return str(obj, encoding='utf-8')
-            return json.JSONEncoder.default(self, obj)
-
-    _kwargs = {"cls": MyEncoder}
+    _kwargs = {"cls": _JsonBytesEncoder}
     if save_pretty:
         _kwargs.update({"indent": 4, "ensure_ascii": False})
     _kwargs.update(kwargs)
@@ -50,6 +51,39 @@ def save_json(data, file, save_pretty=False, **kwargs):
 def load_json(file):
     with open(file, "r") as fp:
         return json.load(fp)
+
+
+def save_jsonl(data, file, **kwargs):
+    _kwargs = {"cls": _JsonBytesEncoder}
+    _kwargs.update(kwargs)
+    lines = []
+    for idx, item in enumerate(data):
+        line = json.dumps(item, **_kwargs)
+        if "\n" in line:
+            raise ValueError(
+                "JSONL line contains newline. Avoid pretty JSON (e.g., indent=2). "
+                f"Line index: {idx}."
+            )
+        lines.append(line)
+    content = "\n".join(lines)
+    if lines:
+        content += "\n"
+    Path(file).parent.mkdir(parents=True, exist_ok=True)
+    with open(file, "w") as fp:
+        fp.write(content)
+
+
+def iter_jsonl(file):
+    with open(file, "r") as fp:
+        for line in fp:
+            line = line.strip()
+            if not line:
+                continue
+            yield json.loads(line)
+
+
+def load_jsonl(file):
+    return list(iter_jsonl(file))
 
 
 def save_pickle(obj, file):
@@ -79,6 +113,9 @@ __all__ = [
     "load_text",
     "save_json",
     "load_json",
+    "save_jsonl",
+    "load_jsonl",
+    "iter_jsonl",
     "save_pickle",
     "load_pickle",
     "save_bytes",
