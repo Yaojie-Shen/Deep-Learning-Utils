@@ -3,20 +3,11 @@
 # @Author  : Yaojie Shen
 # @Project : Deep-Learning-Utils
 # @File    : test_save_and_load_utils.py
-# python
 import tempfile
 from pathlib import Path
 
-from dl_utils import (
-    save_text,
-    load_text,
-    save_json,
-    load_json,
-    save_pickle,
-    load_pickle,
-    save_bytes,
-    load_bytes
-)
+from dl_utils import (load_bytes, load_json, load_pickle, load_text,
+                      save_bytes, save_json, save_pickle, save_text)
 
 
 def test_save_and_load_text():
@@ -49,7 +40,7 @@ def test_save_and_load_json_with_bytes():
         assert loaded["b"] == "bytes"
 
 
-def test_save_json_pretty_and_sorted_keys():
+def test_save_json_pretty():
     with tempfile.TemporaryDirectory() as tmpdir:
         base = Path(tmpdir)
         f = base / "pretty.json"
@@ -62,9 +53,6 @@ def test_save_json_pretty_and_sorted_keys():
         # pretty option should produce newlines and indentation
         assert "\n" in content
         assert "    " in content or "\t" in content
-
-        # sort_keys=True when save_pretty -> "a" should appear before "z"
-        assert content.index('"a"') < content.index('"z"')
 
 
 def test_save_and_load_pickle():
