@@ -20,6 +20,7 @@ if TYPE_CHECKING:
     from .env_utils import *
     from .global_cache_utils import *
     from .id_utils import *
+    from .mask_utils import *
     from .inspect_data_utils import *
     from .memory_utils import *
     from .prefetcher import *
