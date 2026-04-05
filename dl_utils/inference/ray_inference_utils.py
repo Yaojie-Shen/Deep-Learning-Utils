@@ -46,8 +46,8 @@ class RayActorScheduler:
         self._stop_event = threading.Event()
 
         # Initialize token bucket
-        for actor in actors:
-            for _ in range(queue_max_size):
+        for _ in range(queue_max_size):
+            for actor in actors:
                 self.actor_queue.put(actor)
 
         # Monitor task status in background to add token back to the bucket
