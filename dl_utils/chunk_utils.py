@@ -76,7 +76,7 @@ def sort_chunk(
         data: The list to sort and chunk.
         key: A function to extract the sort key for each element.
         reverse: Whether to sort in descending order.
-        *args, **kwargs: Arguments passed to the `chunk` function
+        args, kwargs: Arguments passed to the ``chunk`` function
                          (e.g., n_chunks or chunk_size).
 
     Returns:

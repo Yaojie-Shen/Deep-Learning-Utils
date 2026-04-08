@@ -134,10 +134,10 @@ def measure_memory(
         verbose: Whether to print the memory usage.
         report_cpu: Whether to report CPU memory usage.
 
-    Example:
-        with measure_memory("forward") as m:
-            out = model(x)
-        print(m.gpu_delta_mb)
+    Examples:
+        >>> with measure_memory("forward") as m:
+        ...     out = model(x)
+        >>> print(m.gpu_delta_mb)
     """
     start_time = time.time()
 

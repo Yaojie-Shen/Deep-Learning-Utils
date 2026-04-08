@@ -26,23 +26,24 @@ def get_env(name: str, allow_multiline: bool = False, cwd: str | Path | None = N
     """Get a secret or config value from environment or a dotfile in the working directory.
 
     Lookup order (later overwrites earlier if both exist):
-    1) A file named `{name}` under the current working directory (or `cwd` if provided).
-    2) A file named `.{name}` under the current working directory (or `cwd` if provided).
-    3) Environment variable `name`.
 
-    By default, the returned string contains no line breaks. Set `allow_multiline=True` to preserve
-    multiple lines (line endings normalized to ``\n``).
+    1) A file named ``{name}`` under the current working directory (or ``cwd`` if provided).
+    2) A file named ``.{name}`` under the current working directory (or ``cwd`` if provided).
+    3) Environment variable ``name``.
+
+    By default, the returned string contains no line breaks. Set ``allow_multiline=True`` to preserve
+    multiple lines (line endings normalized to ``\\n``).
 
     Args:
-        name: Environment variable name, and the filename stem for the `.{name}` file.
+        name: Environment variable name, and the filename stem for the ``.{name}`` file.
         allow_multiline: Whether to preserve multiple lines in the returned string.
-        cwd: Optional directory to resolve the `.{name}` file from. Defaults to `Path.cwd()`.
+        cwd: Optional directory to resolve the ``.{name}`` file from. Defaults to ``Path.cwd()``.
 
     Returns:
         The resolved secret/config value as a string.
 
     Raises:
-        KeyError: If the value is not found in either the environment or the `.{name}` file.
+        KeyError: If the value is not found in either the environment or the ``.{name}`` file.
     """
 
     workdir = Path(cwd) if cwd is not None else Path.cwd()
