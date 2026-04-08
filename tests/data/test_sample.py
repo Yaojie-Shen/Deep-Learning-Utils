@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 import torch
 
-from dl_utils import sample_evenly, sample_randomly
+from dl_utils import sample_contiguous, sample_evenly, sample_randomly
 
 
 @pytest.mark.parametrize("input_data, N, expected_type", [
@@ -20,7 +20,7 @@ def test_sample_evenly_basic(input_data, N, expected_type):
     result = sample_evenly(input_data, N)
     print(result)
     assert isinstance(result, expected_type)
-    assert len(result) == 3
+    assert len(result) == N
     # Check for even distribution
     if isinstance(result, list):
         assert result[0] == input_data[0]
@@ -30,14 +30,16 @@ def test_sample_evenly_basic(input_data, N, expected_type):
         assert result[-1].item() == input_data[-1].item()
 
 
-def test_sample_evenly_edge_cases():
-    assert sample_evenly([], 3) == []
-    assert sample_evenly(np.array([]), 3).size == 0
-    assert sample_evenly(torch.tensor([]), 3).numel() == 0
-
-    assert sample_evenly([1, 2], 0) == []
-    assert sample_evenly(np.array([1, 2]), 0).size == 0
-    assert sample_evenly(torch.tensor([1, 2]), 0).numel() == 0
+@pytest.mark.parametrize("input_data, n", [
+    ([], 3),
+    (np.array([]), 3),
+    (torch.tensor([]), 3),
+    ([1, 2, 3, 4], 0),
+    (np.array([1, 2, 3, 4]), 0),
+    (torch.tensor([1, 2, 3, 4]), 0),
+])
+def test_sample_evenly_empty(input_data, n):
+    assert len(sample_evenly(input_data, n)) == 0
 
 
 def test_sample_evenly_more_N_than_input():
@@ -80,6 +82,82 @@ def test_sample_randomly_ordered(ordered):
     assert len(result) == 5
     if ordered:
         assert all(result[i] <= result[i+1] for i in range(len(result)-1))
+
+
+@pytest.mark.parametrize("input_data", [
+    [0, 1, 2, 3, 4, 5],
+    np.arange(6),
+    torch.arange(6),
+])
+@pytest.mark.parametrize("n", [0, 1, 3, 6])
+def test_sample_contiguous(input_data, n):
+    seed = 123
+
+    out = sample_contiguous(input_data, n, seed=seed)
+    out2 = sample_contiguous(input_data, n, seed=seed)
+
+    # length correctness
+    assert len(out) == n
+
+    # edge case
+    if n == 0:
+        return
+
+    # contiguity in the underlying sequence
+    # works for list/np/tensor because slicing preserves order
+    full = np.array(input_data) if not isinstance(
+        input_data, torch.Tensor) else input_data
+    # convert output to array for comparison
+    out_arr = np.array(out) if not isinstance(out, torch.Tensor) else out
+
+    # find start index in the original data
+    start = (full == out_arr[0]).nonzero()[0]
+    assert len(start) > 0
+    start = start[0]
+    expected = full[start:start+n]
+    assert np.allclose(out_arr, expected)
+
+    # reproducibility with seed
+    if isinstance(out, torch.Tensor):
+        assert torch.equal(out, out2)
+    else:
+        assert np.allclose(out, out2)
+
+    # type preservation
+    assert isinstance(out, type(input_data))
+
+
+@pytest.mark.parametrize("func,kwargs", [
+    (sample_evenly,     {"n": 4, }),                # even sampling
+    (sample_randomly,   {"n": 4, "seed": 42}),    # random sampling
+    (sample_contiguous, {"n": 4, "seed": 42}),    # contiguous random sampling
+])
+@pytest.mark.parametrize("input_data", [
+    list(range(100)),
+    np.arange(100),
+    pytest.param(torch.arange(100))
+])
+def test_seed_reproducibility(func, kwargs, input_data):
+    """
+    Ensure that using the same random seed produces the same output
+    across multiple runs for all sampling functions.
+    """
+
+    # Convert kwargs to avoid mutating shared dictionaries across parameter sets
+    local_kwargs = dict(kwargs)
+
+    # First call
+    out1 = func(input_data, **local_kwargs)
+    # Second call
+    out2 = func(input_data, **local_kwargs)
+
+    # Convert outputs for numerical comparison if needed
+    if isinstance(out1, np.ndarray):
+        assert np.array_equal(out1, out2)
+    elif torch and isinstance(out1, torch.Tensor):
+        assert torch.equal(out1, out2)
+    else:
+        assert out1 == out2
 
 
 if __name__ == '__main__':

@@ -12,13 +12,18 @@ if TYPE_CHECKING:
     from .data import *
     from .distributed import *
     from .fs import *
+    from .inference import *
     from .visualize import *
 
+    from .chunk_utils import *
     from .decorators import *
+    from .env_utils import *
     from .global_cache_utils import *
+    from .id_utils import *
+    from .mask_utils import *
     from .inspect_data_utils import *
+    from .memory_utils import *
     from .prefetcher import *
-    from .qps_control import *
     from .timer import *
     from .type_hint import *
 else:

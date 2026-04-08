@@ -20,6 +20,10 @@ except ImportError:
 
 FilePath = Union[str, PathLike[str], Path]
 
-ArrayLike = Union["np.ndarray", "torch.Tensor"]
+ArrayLike = Union["np.ndarray", "torch.Tensor", list, tuple]
 
-__all__ = ["FilePath", "ArrayLike"]
+TorchOrNumpy = Union["np.ndarray", "torch.Tensor"]
+
+Scalar = Union[int, float]
+
+__all__ = ["FilePath", "ArrayLike", "TorchOrNumpy", "Scalar"]

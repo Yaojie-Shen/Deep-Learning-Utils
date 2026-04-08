@@ -37,9 +37,9 @@ Normalization
    :undoc-members:
    :show-inheritance:
 
-Json
-^^^^
-.. automodule:: dl_utils.data.json
+Save & Load
+^^^^^^^^^^^
+.. automodule:: dl_utils.data.save_and_load
    :members:
    :undoc-members:
    :show-inheritance:
@@ -51,13 +51,6 @@ LMDB
    :undoc-members:
    :show-inheritance:
 
-Pickle
-^^^^^^
-.. automodule:: dl_utils.data.pickle
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Sampling
 ^^^^^^^^
 .. automodule:: dl_utils.data.sample
@@ -65,9 +58,9 @@ Sampling
    :undoc-members:
    :show-inheritance:
 
-Text
-^^^^
-.. automodule:: dl_utils.data.text
+Download
+^^^^^^^^
+.. automodule:: dl_utils.data.download
    :members:
    :undoc-members:
    :show-inheritance:
@@ -76,7 +69,30 @@ Text
 Distributed
 -----------
 
-.. automodule:: dl_utils.distributed
+Basic
+^^^^^
+.. automodule:: dl_utils.distributed.basic
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Device
+^^^^^^
+.. automodule:: dl_utils.distributed.device
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Gather
+^^^^^^
+.. automodule:: dl_utils.distributed.gather
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Breakpoint
+^^^^^^^^^^
+.. automodule:: dl_utils.distributed.breakpoint
    :members:
    :undoc-members:
    :show-inheritance:
@@ -84,15 +100,139 @@ Distributed
 File System
 -----------
 
-.. automodule:: dl_utils.fs
+Dir
+^^^
+.. automodule:: dl_utils.fs.dir
    :members:
    :undoc-members:
    :show-inheritance:
 
+List Files
+^^^^^^^^^^
+.. automodule:: dl_utils.fs.list_files
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
+Inference
+---------
+
+LLM Utils
+^^^^^^^^^
+.. automodule:: dl_utils.inference.llm_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+QPS Control
+^^^^^^^^^^^
+.. automodule:: dl_utils.inference.qps_control
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Optional Inference Extras
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The following modules require optional dependencies and are not expanded here by autodoc:
+
+- ``dl_utils.inference.ray_inference_utils`` (install with ``pip install dl-utils[ray]``)
+- ``dl_utils.inference.ollama_utils`` (install with ``pip install dl-utils[ollama]``)
+
 Visualize
 ---------
 
-.. automodule:: dl_utils.visualize
+Plot
+^^^^
+.. automodule:: dl_utils.visualize.plot
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Image/Video Visualize
+^^^^^^^^^^^^^^^^^^^^^
+.. automodule:: dl_utils.visualize.image_video_visualize
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Misc
+----
+
+Chunk
+^^^^^
+.. automodule:: dl_utils.chunk_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Decorators
+^^^^^^^^^^
+.. automodule:: dl_utils.decorators
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Cache
+^^^^^
+.. automodule:: dl_utils.global_cache_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Env
+^^^
+.. automodule:: dl_utils.env_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+ID
+^^
+.. automodule:: dl_utils.id_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Mask
+^^^^
+.. automodule:: dl_utils.mask_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Inspect Data
+^^^^^^^^^^^^
+.. automodule:: dl_utils.inspect_data_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Memory
+^^^^^^
+.. automodule:: dl_utils.memory_utils
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Prefetcher
+^^^^^^^^^^
+.. automodule:: dl_utils.prefetcher
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Type Hint
+^^^^^^^^^
+.. automodule:: dl_utils.type_hint
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+Timer
+^^^^^
+.. automodule:: dl_utils.timer
    :members:
    :undoc-members:
    :show-inheritance:

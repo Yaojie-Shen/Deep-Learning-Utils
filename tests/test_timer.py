@@ -29,23 +29,33 @@ def test_timer(precision):
 
     print()
 
-    with timer.stage("All stages"):  # Nested
-        timer.start_stage("Stage 1")
-        time.sleep(0.1)
-        timer.end_stage("Stage 1")
-        timer.start_stage()
-        time.sleep(0.2)
-        timer.end_stage("Stage 2")
-        time.sleep(0.2)
-        timer.end_stage("Stage 2")
+    timer.start_stage("Stage 1")
+    time.sleep(0.1)
+    timer.end_stage("Stage 1")
+    timer.start_stage()
+    time.sleep(0.2)
+    timer.end_stage("Stage 2")
+    time.sleep(0.2)
+    timer.end_stage("Stage 2")
 
-        timer.start_stage("Stage 3")
-        time.sleep(0.3)
-        timer.start_stage()
-        time.sleep(0.4)
-        timer.end_stage("Stage 4")
+    timer.start_stage("Stage 3")
+    time.sleep(0.3)
+    timer.start_stage()
+    time.sleep(0.4)
+    timer.end_stage("Stage 4")
 
     print()
     timer.print_table()
     print()
     print(timer)
+
+
+def test_timer_with_name():
+    timer = ExecutionTimer(log=True, name="Test Timer")
+    print()
+    timer.start_stage("Stage 1")
+    time.sleep(0.1)
+    timer.start_stage("Stage 2")
+    time.sleep(0.2)
+
+    timer.print_table()

@@ -6,34 +6,26 @@
 
 __all__ = [
     "normalize",
-    "inv_normalize"
+    "inv_normalize",
+    "convert_image_video_range"
 ]
 
 import numpy as np
 import torch
 
-from .. import to_numpy, to_original
-from ..type_hint import ArrayLike
+from .. import to_numpy, to_tensor
+from ..type_hint import ArrayLike, Scalar, TorchOrNumpy
 
 
 def _prepare_mean_std(
-        mean: float | int | np.ndarray | torch.Tensor,
-        std: float | int | np.ndarray | torch.Tensor,
+        mean: TorchOrNumpy,
+        std: TorchOrNumpy,
         dim: int,
         ndim: int
-) -> tuple[np.ndarray, np.ndarray]:
-    """A helper function to prepare mean and std for normalization."""
-    # dtype -> numpy
-    if isinstance(mean, (int, float)):
-        mean = np.array([mean])
-    else:
-        mean = to_numpy(mean)
-    if isinstance(std, (int, float)):
-        std = np.array([std])
-    else:
-        std = to_numpy(std)
-
-    # Reshape mean and std to broadcast along the specified dim
+) -> tuple[TorchOrNumpy, TorchOrNumpy]:
+    """A helper function to prepare mean and std for normalization.
+    Reshape mean and std to broadcast along the specified dim
+    """
     shape = [1] * ndim
     shape[dim] = -1
     mean = mean.reshape(shape)
@@ -41,11 +33,19 @@ def _prepare_mean_std(
     return mean, std
 
 
+def _normalize(data, mean, std):
+    return (data - mean) / std
+
+
+def _inv_normalize(data, mean, std):
+    return data * std + mean
+
+
 def normalize(
         data: ArrayLike,
-        mean: float | int | np.ndarray | torch.Tensor,
-        std: float | int | np.ndarray | torch.Tensor,
-        dim=-1
+        mean: Scalar | ArrayLike,
+        std: Scalar | ArrayLike,
+        dim: int = -1
 ) -> ArrayLike:
     """Normalize the input array (usually image or video).
 
@@ -72,23 +72,27 @@ def normalize(
         tensor([[[0., 0., 0.]]], dtype=torch.float64)
     """
 
-    # Convert to numpy for simplicity
-    ori_type = type(data)
-    data = to_numpy(data)
-
-    mean, std = _prepare_mean_std(mean, std, dim, len(data.shape))
-
-    # Normalize
-    data = (data - mean) / std
-
-    # Convert back to original type
-    return to_original(data, ori_type)
+    if isinstance(data, list):
+        return normalize(np.array(data), mean, std, dim).tolist()
+    if isinstance(data, tuple):
+        return tuple(normalize(np.array(data), mean, std, dim).tolist())
+    elif isinstance(data, np.ndarray):
+        mean, std = to_numpy(mean), to_numpy(std)
+        mean, std = _prepare_mean_std(mean, std, dim, len(data.shape))
+        return _normalize(data, mean, std)
+    elif isinstance(data, torch.Tensor):
+        # NOTE: Move std and mean to same device and convert to same dtype
+        mean, std = to_tensor(mean, data), to_tensor(std, data)
+        mean, std = _prepare_mean_std(mean, std, dim, len(data.shape))
+        return _normalize(data, mean, std)
+    else:
+        raise TypeError(f"Unsupported data type: {type(data)}")
 
 
 def inv_normalize(
         data: ArrayLike,
-        mean: float | int | np.ndarray | torch.Tensor,
-        std: float | int | np.ndarray | torch.Tensor,
+        mean: Scalar | ArrayLike,
+        std: Scalar | ArrayLike,
         dim=-1
 ) -> ArrayLike:
     """Inverse normalize the input array (usually image or video).
@@ -104,14 +108,93 @@ def inv_normalize(
     Returns:
         Denormalized image or video in the same type as input (NumPy array or PyTorch tensor).
     """
-    # Convert to numpy for simplicity
-    ori_type = type(data)
-    data = to_numpy(data)
+    if isinstance(data, list):
+        return inv_normalize(np.array(data), mean, std, dim).tolist()
+    if isinstance(data, tuple):
+        return tuple(inv_normalize(np.array(data), mean, std, dim).tolist())
+    elif isinstance(data, np.ndarray):
+        mean, std = to_numpy(mean), to_numpy(std)
+        mean, std = _prepare_mean_std(mean, std, dim, len(data.shape))
+        return _inv_normalize(data, mean, std)
+    elif isinstance(data, torch.Tensor):
+        # NOTE: Move std and mean to same device and convert to same dtype
+        mean, std = to_tensor(mean, data), to_tensor(std, data)
+        mean, std = _prepare_mean_std(mean, std, dim, len(data.shape))
+        return _inv_normalize(data, mean, std)
+    else:
+        raise TypeError(f"Unsupported data type: {type(data)}")
 
-    mean, std = _prepare_mean_std(mean, std, dim, len(data.shape))
 
-    # Inverse normalize
-    data = data * std + mean
+def convert_image_video_range(data: TorchOrNumpy, pattern: str):
+    """
+    Convert torch/numpy images/videos between flexible dtype and range.
 
-    # Convert back to original type
-    return to_original(data, ori_type)
+    Note:
+        - When converting from `uint8`, inputs may be integers or floating point values.
+        - When converting from `-1_1` or `0_1`, inputs must be floating point.
+        - When converting from `uint8` to `-1_1` or `0_1`, floating-point inputs preserve their dtype; integer inputs are promoted to float32.
+        - When converting between `-1_1` and `0_1`, the output keeps the input’s dtype.
+
+    Examples:
+
+        >>> img = np.array([[[0, 128, 255]]], dtype=np.uint8)
+        >>> convert_image_video_range(img, "uint8->0_1")
+        array([[[0.       , 0.5019608, 1.       ]]], dtype=float32)
+        >>> img = np.array([[[0.0, 0.5, 1.0]]], dtype=np.float32)
+        >>> convert_image_video_range(img, "0_1->uint8")
+        array([[[0, 128, 255]]], dtype=uint8)
+        >>> img = np.array([[[0.0, 0.5, 1.0]]], dtype=np.float32)
+        >>> convert_image_video_range(img, "0_1->-1_1")
+        array([[[-1.,  0.,  1.]]], dtype=float32)
+    """
+    RANGE_SPECS = {
+        "uint8": ("uint8", 0.0, 255.0),
+        "-1_1": ("float", -1.0, 1.0),
+        "0_1": ("float", 0.0, 1.0),
+    }
+    try:
+        in_spec, out_spec = [s.strip() for s in pattern.split("->")]
+    except:
+        raise ValueError(f"Invalid pattern: {pattern}")
+
+    if in_spec not in RANGE_SPECS or out_spec not in RANGE_SPECS:
+        raise ValueError(f"Unknown spec(s): {pattern}")
+
+    assert isinstance(data, (np.ndarray, torch.Tensor)), \
+        f"Data type \"{type(data)}\" is not supported, expected np.ndarray or torch.Tensor"
+
+    in_dtype, in_low, in_high = RANGE_SPECS[in_spec]
+    out_dtype, out_low, out_high = RANGE_SPECS[out_spec]
+
+    # check input dtype
+    if in_dtype in ("uint8",):
+        pass
+    elif in_dtype in ("float",):
+        if isinstance(data, torch.Tensor):
+            assert data.is_floating_point(), "Expected floating-point tensor"
+        else:
+            assert np.issubdtype(data.dtype, np.floating), "Expected floating-point array"
+    else:
+        raise NotImplementedError(f"Unknown dtype: {in_dtype}")
+
+    if in_spec == out_spec:
+        return data  # If same, return directly
+
+    if in_dtype == "uint8":
+        if isinstance(data, torch.Tensor) and not data.is_floating_point():
+            data = data.to(torch.float32)
+        elif isinstance(data, np.ndarray) and not np.issubdtype(data.dtype, np.floating):
+            data = data.astype(np.float32)
+
+    _ratio = (out_high - out_low) / (in_high - in_low)
+    data = data * _ratio + (out_low - in_low * _ratio)
+    # NOTE: A simplified version is:
+    # # Normalize to [0, 1]
+    # data = (data - in_low) / (in_high - in_low)
+    # data = data * (out_high - out_low) + out_low
+
+    if out_dtype == "uint8":
+        data = data.round().clip(0, 255)
+        return data.astype(np.uint8) if isinstance(data, np.ndarray) else data.to(torch.uint8)
+    else:
+        return data

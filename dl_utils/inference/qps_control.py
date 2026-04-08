@@ -12,7 +12,7 @@ from typing import Optional, Any, Callable
 
 class QPSLimiter:
     """
-    This is a QPS Limiter based on token bucket. It is suitable for tasks with QPS below 100.
+    This is a high performance QPS Limiter based on token bucket, supporting more than 1000 QPS.
     """
 
     def __init__(
@@ -48,18 +48,21 @@ class QPSLimiter:
         return self.query_count / (self.end_time - self.start_time)
 
     async def _refill_tokens(self):
-        """Refill token"""
-        s_time = time.time()
+        """Refill tokens using elapsed time to support higher QPS"""
+        last_time = time.perf_counter()
         while self.running:
-            # Sleep at the start to ensure wait for enough time when refilling the first token
-            await asyncio.sleep(1 / self.qps - (time.time() - s_time))
-            # Skip if already have enough token in bucket to reduce computation
-            if self.tokens == self.qps:
+            await asyncio.sleep(0.01)  # coarse sleep to reduce event-loop overhead
+            now = time.perf_counter()
+            elapsed = now - last_time
+
+            # Calculate how many tokens should be added
+            add_tokens = int(elapsed * self.qps)
+            if add_tokens <= 0:
                 continue
-            # Refill token
+
+            last_time = now
             async with self.lock:
-                self.tokens = min(self.qps, self.tokens + 1)
-            s_time = time.time()
+                self.tokens = min(self.qps, self.tokens + add_tokens)
 
     async def shutdown(self):
         """Shutdown token refill"""
@@ -82,7 +85,7 @@ class QPSLimiter:
                         self.tokens -= 1
                         self.query_count += 1
                         break
-                await asyncio.sleep(0.0001)  # Wait for token
+                await asyncio.sleep(0)  # yield control without high-frequency spinning
 
             loop = asyncio.get_running_loop()
             result = await loop.run_in_executor(self.executor, func, *args)

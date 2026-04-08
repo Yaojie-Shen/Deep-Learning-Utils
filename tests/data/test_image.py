@@ -6,7 +6,7 @@
 
 import numpy as np
 
-from dl_utils import byte_imread, byte_imwrite, visualize_image
+from dl_utils import byte_imread, byte_imwrite
 
 
 def test_byte_imread_imwrite():

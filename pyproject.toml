@@ -1,6 +1,6 @@
 [project]
 name = "dl-utils"
-version = "0.0.1"
+version = "0.2.0"
 description = ""
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -26,6 +26,8 @@ dependencies = [
 
 [project.optional-dependencies]
 test = ["pytest"]
+ollama = ["ollama"]
+ray = ["ray"]
 
 [project.urls]
 source_code = "https://github.com/yaojie-shen/Deep-Learning-Utils"
@@ -38,7 +40,7 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-exclude = ["venv*", "data*", "test*", "output*"]
+exclude = ["venv*", "data*", "test*", "output*", "docs*"]
 
 [tool.whell]
-exclude = ["venv*", "data*", "test*", "output*"]
+exclude = ["venv*", "data*", "test*", "output*", "docs*"]
