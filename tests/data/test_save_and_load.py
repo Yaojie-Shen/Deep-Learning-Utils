@@ -73,6 +73,20 @@ def test_save_and_load_jsonl_with_bytes():
         assert loaded[1]["lst"] == [1, 2, 3]
 
 
+def test_load_jsonl_max_samples():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        base = Path(tmpdir)
+        f = base / "data.jsonl"
+
+        data = [{"i": i} for i in range(5)]
+        save_jsonl(data, str(f))
+
+        loaded = load_jsonl(str(f), max_samples=2)
+
+        assert len(loaded) == 2
+        assert loaded == data[:2]
+
+
 def test_save_jsonl_rejects_newlines():
     with tempfile.TemporaryDirectory() as tmpdir:
         base = Path(tmpdir)
@@ -100,6 +114,27 @@ def test_iter_jsonl():
 
         tqdm_items = list(tqdm(iter_jsonl(str(f))))
         assert tqdm_items == [{"a": 1}, {"a": 2}]
+
+
+def test_iter_jsonl_max_samples_affects_len_and_iteration():
+    with tempfile.TemporaryDirectory() as tmpdir:
+        base = Path(tmpdir)
+        f = base / "data.jsonl"
+
+        f.write_text("""{"a": 1}
+{"a": 2}
+{"a": 3}
+""")
+
+        it = iter_jsonl(str(f), max_samples=2)
+        assert len(it) == 2
+        assert list(it) == [{"a": 1}, {"a": 2}]
+        assert it[0] == {"a": 1}
+        try:
+            _ = it[2]
+            assert False, "Expected IndexError when accessing beyond max_samples"
+        except IndexError:
+            pass
 
 
 def test_save_and_load_pickle():

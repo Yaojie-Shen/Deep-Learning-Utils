@@ -7,6 +7,7 @@
 import json
 import pickle
 from pathlib import Path
+from typing import Optional
 
 
 def save_text(text: str, file):
@@ -73,11 +74,12 @@ def save_jsonl(data, file, **kwargs):
         fp.write(content)
 
 
-def iter_jsonl(file):
+def iter_jsonl(file, max_samples: Optional[int] = None):
     class _JsonlIterable:
-        def __init__(self, file_path):
+        def __init__(self, file_path, max_samples: Optional[int] = None):
             self.file_path = file_path
             self._offsets = None
+            self._max_samples = max_samples
 
         def _ensure_offsets(self):
             if self._offsets is not None:
@@ -95,15 +97,21 @@ def iter_jsonl(file):
 
         def __iter__(self):
             with open(self.file_path, "r") as fp:
+                count = 0
                 for line in fp:
                     line = line.strip()
                     if not line:
                         continue
+                    if self._max_samples is not None and count >= self._max_samples:
+                        break
+                    count += 1
                     yield json.loads(line)
 
         def __len__(self):
             self._ensure_offsets()
-            return len(self._offsets)
+            if self._max_samples is None:
+                return len(self._offsets)
+            return min(len(self._offsets), self._max_samples)
 
         def __getitem__(self, index):
             if not isinstance(index, int):
@@ -111,7 +119,8 @@ def iter_jsonl(file):
             if index < 0:
                 raise IndexError("negative index is not supported")
             self._ensure_offsets()
-            if index >= len(self._offsets):
+            effective_len = len(self)
+            if index >= effective_len:
                 raise IndexError("index out of range")
 
             with open(self.file_path, "r") as fp:
@@ -119,11 +128,21 @@ def iter_jsonl(file):
                 line = fp.readline()
                 return json.loads(line)
 
-    return _JsonlIterable(file)
+    return _JsonlIterable(file, max_samples=max_samples)
 
 
-def load_jsonl(file):
-    return list(iter_jsonl(file))
+def load_jsonl(file, max_samples: Optional[int] = None):
+    """Load a JSONL file into a list.
+
+    Parameters
+    ----------
+    file:
+        Path to the JSONL file.
+    max_samples:
+        If given, load at most this many non-empty lines from the file.
+    """
+
+    return list(iter_jsonl(file, max_samples=max_samples))
 
 
 def save_pickle(obj, file):

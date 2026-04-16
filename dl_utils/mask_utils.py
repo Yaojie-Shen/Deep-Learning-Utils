@@ -143,6 +143,7 @@ def save_mask(
     out = unbinarize_mask(m)
     # For uint8 2D arrays, Pillow will infer "L" mode.
     img = Image.fromarray(out)
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
     img.save(str(path))
 
 
