@@ -16,6 +16,7 @@ if TYPE_CHECKING:
     from .normalize import *
     from .sample import *
     from .save_and_load import *
+    from .small_file_utils import *
     from .video import *
 else:
     import sys
