@@ -13,7 +13,6 @@ if TYPE_CHECKING:
     from .distributed import *
     from .fs import *
     from .inference import *
-    from .visualize import *
 
     from .chunk_utils import *
     from .decorators import *
