@@ -8,39 +8,17 @@ import os
 import hashlib
 import uuid
 from pathlib import Path
-from typing import Iterable
-
-
-def _as_list(x):
-    if x is None:
-        return []
-    if isinstance(x, (list, tuple)):
-        return list(x)
-    return [x]
-
-
-def _compile_patterns(patterns):
-    compiled = []
-    for p in _as_list(patterns):
-        if isinstance(p, re.Pattern):
-            compiled.append(p)
-        else:
-            compiled.append(re.compile(p))
-    return compiled
-
-
-def _matches_any(name: str, patterns: Iterable[re.Pattern]) -> bool:
-    return any(p.search(name) for p in patterns)
+from typing import Any, Callable, Iterable
 
 
 def list_ids(
-        roots: str | list[str],
-        include: str | re.Pattern | list[re.Pattern] = "auto",
-        exclude: str | re.Pattern | list[re.Pattern] = None,
-        matching: str | re.Pattern = "auto",
-        simple: bool = True,
-        return_filepath: bool = False,
-        return_dict: bool = False,
+    roots: str | list[str],
+    include: str | re.Pattern | list[re.Pattern] = "auto",
+    exclude: str | re.Pattern | list[re.Pattern] | None = None,
+    matching: str | re.Pattern = "auto",
+    simple: bool = True,
+    return_filepath: bool = False,
+    return_dict: bool = False,
 ) -> list[str] | tuple[list[str], list[str]] | dict[str, str]:
     """
     Extract sample IDs from file or folder names under given root paths.
@@ -56,8 +34,28 @@ def list_ids(
 
     Returns: A list of extracted IDs, or a tuple of (IDs, file/folder paths) if return_filepath is True.
     """
-    roots = [Path(r) for r in _as_list(roots)]
-    exclude_patterns = _compile_patterns(exclude)
+
+    def as_list(x):
+        if x is None:
+            return []
+        if isinstance(x, (list, tuple)):
+            return list(x)
+        return [x]
+
+    def compile_patterns(patterns):
+        compiled = []
+        for pattern_like in as_list(patterns):
+            if isinstance(pattern_like, re.Pattern):
+                compiled.append(pattern_like)
+            else:
+                compiled.append(re.compile(pattern_like))
+        return compiled
+
+    def matches_any(name: str, patterns: Iterable[re.Pattern]) -> bool:
+        return any(pattern.search(name) for pattern in patterns)
+
+    roots = [Path(r) for r in as_list(roots)]
+    exclude_patterns = compile_patterns(exclude)
 
     pattern = None
     if matching != "auto":
@@ -109,16 +107,16 @@ def list_ids(
             include_patterns = []
         else:
             candidates = entries
-            include_patterns = _compile_patterns(include)
+            include_patterns = compile_patterns(include)
 
         for name, path_str, is_file, is_dir in candidates:
 
             # include filter
-            if include_patterns and not _matches_any(name, include_patterns):
+            if include_patterns and not matches_any(name, include_patterns):
                 continue
 
             # exclude filter
-            if exclude_patterns and _matches_any(name, exclude_patterns):
+            if exclude_patterns and matches_any(name, exclude_patterns):
                 continue
 
             # --- ID extraction ---
@@ -167,7 +165,60 @@ def generate_id(seed: str | None = None) -> str:
     return h.hexdigest()
 
 
+def index_by_id(
+    entries: Iterable[Any] | None,
+    key: Callable[[Any], Any] | None = None,
+    ignore_duplicates: bool = False,
+) -> dict[str, Any]:
+    """Build a dict index from entries.
+
+    Args:
+        entries: Entries to index.
+        key: Function used to extract a key from each entry. If None, try common
+            id-like keys from dict entries.
+        ignore_duplicates: Whether to ignore duplicated keys. If False, raise a
+            ValueError when duplicated keys are found. If True, skip duplicate
+            checks and let later entries overwrite earlier ones.
+
+    Returns:
+        A dictionary mapping extracted keys to original entries.
+    """
+    default_id_keys = ("id", "uuid", "key", "name")
+
+    def get_default_id(entry: Any) -> str:
+        if not isinstance(entry, dict):
+            raise ValueError(
+                "Cannot infer id from non-dict entry. Please provide `key` explicitly."
+            )
+
+        for field in default_id_keys:
+            value = entry.get(field)
+            if value is not None:
+                return str(value)
+
+        raise ValueError(
+            f"Cannot infer id from dict entry. Tried keys {default_id_keys}. Please provide `key` explicitly."
+        )
+
+    index: dict[str, Any] = {}
+
+    for entry in entries or []:
+        value = key(entry) if key is not None else get_default_id(entry)
+
+        if value is None:
+            continue
+
+        value = str(value)
+        if not ignore_duplicates and value in index:
+            raise ValueError(f"Duplicated key found: {value}")
+
+        index[value] = entry
+
+    return index
+
+
 __all__ = [
     "list_ids",
     "generate_id",
+    "index_by_id",
 ]
