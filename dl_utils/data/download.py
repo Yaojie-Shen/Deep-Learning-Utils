@@ -34,13 +34,15 @@ def download(
 
     Args:
         url: Download URL.
-        filepath: Path to save the file.
+        filepath: Path to save the file. If not provided, the file is saved under `cache_dir` with filename
+            `os.path.basename(url)`.
         expected_sha256: Expected SHA256 checksum.
-        cache_dir: Cache directory if filepath is not specified.
+        cache_dir: Cache directory if filepath is not specified. By default, it is `~/.cache/dl_utils`.
 
     Returns:
         Path to the downloaded file.
     """
+    # If `filepath` is not specified, download into `cache_dir` using the URL basename as filename.
     if filepath is None:
         filename = os.path.basename(url)
         filepath = os.path.join(os.path.expanduser(cache_dir), filename)

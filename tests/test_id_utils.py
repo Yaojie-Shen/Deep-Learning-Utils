@@ -8,7 +8,9 @@ import re
 import tempfile
 from pathlib import Path
 
-from dl_utils import generate_id, list_ids
+import pytest
+
+from dl_utils import generate_id, index_by_id, list_ids
 
 
 def test_list_ids_with_tempfile():
@@ -124,3 +126,63 @@ def test_generate_id_deterministic_mode():
     assert a1 == a2
     assert a1 != b
     assert re.fullmatch(r"[0-9a-f]{32}", a1)
+
+
+def test_index_by_id_raises_on_duplicated_keys_by_default():
+    entries = [
+        {"id": 1, "value": "old"},
+        {"uuid": "u-2", "value": "second"},
+        {"id": 1, "value": "new"},
+    ]
+
+    with pytest.raises(ValueError, match="Duplicated key found: 1"):
+        index_by_id(entries)
+
+
+def test_index_by_id_can_ignore_duplicated_keys_and_keep_last_entry():
+    entries = [
+        {"id": 1, "value": "old"},
+        {"uuid": "u-2", "value": "second"},
+        {"id": 1, "value": "new"},
+    ]
+
+    index = index_by_id(entries, ignore_duplicates=True)
+
+    assert sorted(index.keys()) == ["1", "u-2"]
+    assert index["1"] == {"id": 1, "value": "new"}
+    assert index["u-2"] == {"uuid": "u-2", "value": "second"}
+
+
+def test_index_by_id_supports_arbitrary_entries_with_key_function():
+    entries = ["alpha.txt", "beta.txt"]
+
+    index = index_by_id(entries, key=lambda x: Path(x).stem)
+
+    assert index == {
+        "alpha": "alpha.txt",
+        "beta": "beta.txt",
+    }
+
+
+def test_index_by_id_skips_none_key_values():
+    entries = [
+        {"id": "keep"},
+        {"id": None},
+        "skip-me",
+    ]
+
+    index = index_by_id(entries, key=lambda x: x.get("id") if isinstance(x, dict) else None)
+
+    assert index == {"keep": {"id": "keep"}}
+
+
+@pytest.mark.parametrize(
+    "entry",
+    [
+        "plain-string",
+        {"value": 123},
+    ],
+)
+def test_index_by_id_raises_when_key_cannot_be_inferred(entry):
+    with pytest.raises(ValueError, match="provide `key` explicitly"):
+        index_by_id([entry])
