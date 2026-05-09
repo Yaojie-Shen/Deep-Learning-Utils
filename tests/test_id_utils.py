@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from dl_utils import generate_id, index_by_id, list_ids
+from dl_utils import IdSampleManager, generate_id, index_by_id, list_ids
 
 
 def test_list_ids_with_tempfile():
@@ -186,3 +186,94 @@ def test_index_by_id_skips_none_key_values():
 def test_index_by_id_raises_when_key_cannot_be_inferred(entry):
     with pytest.raises(ValueError, match="provide `key` explicitly"):
         index_by_id([entry])
+
+
+def test_id_sample_manager_samples_without_repeating_consumed_ids():
+    manager = IdSampleManager(["a", "b", "c", "d", "e", "f"])
+
+    first = manager.sample_record(2, "first", seed=0)
+    second = manager.sample_record(2, "second", seed=1)
+
+    assert len(first) == 2
+    assert len(second) == 2
+    assert set(first).isdisjoint(second)
+    assert set(manager.get_selected_ids(consumed_only=True)) == set(first) | set(second)
+    assert set(manager.get_remaining_ids()) == {"a", "b", "c", "d", "e", "f"} - set(first) - set(second)
+    assert manager.list_records(consumed=True) == ["first", "second"]
+
+
+def test_id_sample_manager_raises_or_returns_partial_when_pool_is_insufficient():
+    manager = IdSampleManager(["a", "b", "c"])
+    manager.sample_record(2, "first", seed=0)
+
+    with pytest.raises(ValueError, match="only 1 are available"):
+        manager.sample_record(2, "second", seed=1)
+
+    remaining = manager.sample_record(2, "second", seed=1, allow_partial=True)
+    assert len(remaining) == 1
+    assert remaining == manager.get_record_ids("second")
+    assert manager.get_remaining_ids() == []
+
+
+def test_id_sample_manager_supports_named_set_operations_and_record_queries():
+    manager = IdSampleManager(["a", "b", "c", "d", "e"])
+    manager.add_record("left", ["a", "b", "c"], consumed=True)
+    manager.add_record("right", ["b", "c", "d"], consumed=False)
+    original_names = manager.list_records()
+
+    assert manager.union("left", "right") == ["a", "b", "c", "d"]
+    assert manager.intersection("left", "right") == ["b", "c"]
+    assert manager.difference("left", "right") == ["a"]
+    assert manager.complement("left") == ["d", "e"]
+    assert manager.list_records() == original_names
+
+    combined = manager.union("left", "right", name="combined")
+    assert combined == ["a", "b", "c", "d"]
+    assert manager.get_record("combined") == {
+        "ids": ["a", "b", "c", "d"],
+        "kind": "derived",
+        "consumed": False,
+        "metadata": {},
+    }
+
+
+def test_id_sample_manager_can_find_records_by_id_efficiently():
+    manager = IdSampleManager(["a", "b", "c", "d", "e"])
+    manager.add_record("sample_a", ["a", "b"], kind="sample", consumed=True)
+    manager.add_record("manual_b", ["b", "c"], kind="manual", consumed=False)
+    manager.add_record("derived_b", ["b", "d"], kind="derived", consumed=False)
+
+    assert manager.find_records_by_id("b") == ["sample_a", "manual_b", "derived_b"]
+    assert manager.find_records_by_id("b", consumed=True) == ["sample_a"]
+    assert manager.find_records_by_id("b", kind="manual") == ["manual_b"]
+    assert manager.find_records_by_id("missing") == []
+
+
+def test_id_sample_manager_can_save_and_load_json_state():
+    with tempfile.TemporaryDirectory() as tmp:
+        path = Path(tmp) / "state.json"
+
+        manager = IdSampleManager(["a", "b", "c", "d"])
+        manager.sample_record(2, "seeded", seed=123, metadata={"note": "demo"})
+        manager.add_record("manual", ["d"], consumed=False, metadata={"source": "external"})
+        manager.save_json(path)
+
+        loaded = IdSampleManager.load_json(path)
+
+        assert loaded.to_dict() == manager.to_dict()
+        assert loaded.get_remaining_ids() == manager.get_remaining_ids()
+        assert loaded.get_record("manual") == {
+            "ids": ["d"],
+            "kind": "manual",
+            "consumed": False,
+            "metadata": {"source": "external"},
+        }
+
+
+def test_id_sample_manager_rejects_duplicate_or_unknown_ids():
+    with pytest.raises(ValueError, match="Duplicated ID found in ids"):
+        IdSampleManager(["a", "a"])
+
+    manager = IdSampleManager(["a", "b"])
+    with pytest.raises(ValueError, match="outside the managed pool"):
+        manager.add_record("bad", ["a", "c"])
