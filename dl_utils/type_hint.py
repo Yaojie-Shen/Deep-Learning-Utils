@@ -4,26 +4,22 @@
 # @Project : Deep-Learning-Utils
 # @File    : type_hint.py
 
-from os import PathLike
-from pathlib import Path
+import os
 from typing import Union
 
-try:
-    import numpy as np
-except ImportError:
-    np = None
+import numpy as np
+import torch
 
-try:
-    import torch
-except ImportError:
-    torch = None
-
-FilePath = Union[str, PathLike[str], Path]
-
-ArrayLike = Union["np.ndarray", "torch.Tensor", list, tuple]
-
-TorchOrNumpy = Union["np.ndarray", "torch.Tensor"]
-
+PathLike = Union[str, os.PathLike]
+TorchOrNumpy = Union[np.ndarray, torch.Tensor]
+ArrayLike = Union[TorchOrNumpy, list, tuple]
 Scalar = Union[int, float]
+ArrayOrScalar = Union[ArrayLike, Scalar]
 
-__all__ = ["FilePath", "ArrayLike", "TorchOrNumpy", "Scalar"]
+__all__ = [
+    "PathLike",
+    "TorchOrNumpy",
+    "ArrayLike",
+    "Scalar",
+    "ArrayOrScalar",
+]

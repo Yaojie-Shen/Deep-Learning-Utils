@@ -14,12 +14,12 @@ from joblib import Parallel, delayed
 
 from .array import to_numpy
 from .. import make_parent_dirs
-from ..type_hint import FilePath, ArrayLike
+from ..type_hint import ArrayLike, PathLike
 
 
 def save_video(
         frames: ArrayLike,
-        save_path: FilePath,
+        save_path: PathLike,
         fps: Union[int, float] = 30,
         codec: str = "avc1"
 ):
@@ -52,7 +52,7 @@ def save_video(
 
 
 def load_video(
-        video_path: FilePath,
+        video_path: PathLike,
         resize: Union[Tuple[int, int], int] = None,
         center_crop: Union[Tuple[int, int], int] = None,
         max_frames: int = None,
@@ -129,7 +129,7 @@ def load_video(
     return np.stack(frames)  # (f,h,w,c)
 
 
-def get_video_fps(video_path: FilePath) -> float:
+def get_video_fps(video_path: PathLike) -> float:
     """
     Retrieve the FPS of a video.
 
@@ -145,7 +145,7 @@ def get_video_fps(video_path: FilePath) -> float:
     return fps
 
 
-def get_video_frame_count(video_path: FilePath) -> int:
+def get_video_frame_count(video_path: PathLike) -> int:
     """
     Retrieve the total number of frames in a video.
 
@@ -161,7 +161,7 @@ def get_video_frame_count(video_path: FilePath) -> int:
     return int(frame_count)
 
 
-def get_video_duration(video_path: FilePath) -> Tuple[float, int, float]:
+def get_video_duration(video_path: PathLike) -> Tuple[float, int, float]:
     """
     Retrieve the FPS, frame count, and duration (in seconds) of a video.
 
@@ -177,7 +177,7 @@ def get_video_duration(video_path: FilePath) -> Tuple[float, int, float]:
     return fps, frame_count, frame_count / fps
 
 
-def get_video_duration_batch(video_paths: List[FilePath]) -> List[float]:
+def get_video_duration_batch(video_paths: List[PathLike]) -> List[float]:
     """
     Get duration of videos in batch.
 

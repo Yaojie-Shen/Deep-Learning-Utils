@@ -12,9 +12,10 @@ __all__ = [
 
 import numpy as np
 import torch
+from typing import Tuple
 
 from .. import to_numpy, to_tensor
-from ..type_hint import ArrayLike, Scalar, TorchOrNumpy
+from ..type_hint import ArrayLike, ArrayOrScalar, TorchOrNumpy
 
 
 def _prepare_mean_std(
@@ -22,7 +23,7 @@ def _prepare_mean_std(
         std: TorchOrNumpy,
         dim: int,
         ndim: int
-) -> tuple[TorchOrNumpy, TorchOrNumpy]:
+) -> Tuple[TorchOrNumpy, TorchOrNumpy]:
     """A helper function to prepare mean and std for normalization.
     Reshape mean and std to broadcast along the specified dim
     """
@@ -43,16 +44,16 @@ def _inv_normalize(data, mean, std):
 
 def normalize(
         data: ArrayLike,
-        mean: Scalar | ArrayLike,
-        std: Scalar | ArrayLike,
+        mean: ArrayOrScalar,
+        std: ArrayOrScalar,
         dim: int = -1
 ) -> ArrayLike:
     """Normalize the input array (usually image or video).
 
     Args:
         data: Input array, can be a NumPy array or a PyTorch tensor.
-        mean: Scalar or vector of means for each channel.
-        std: Scalar or vector of standard deviations for each channel.
+        mean: Numeric scalar or vector of means for each channel.
+        std: Numeric scalar or vector of standard deviations for each channel.
         dim: The channel dimension to normalize along. Default is -1 (last dimension).
 
     Returns:
@@ -91,8 +92,8 @@ def normalize(
 
 def inv_normalize(
         data: ArrayLike,
-        mean: Scalar | ArrayLike,
-        std: Scalar | ArrayLike,
+        mean: ArrayOrScalar,
+        std: ArrayOrScalar,
         dim=-1
 ) -> ArrayLike:
     """Inverse normalize the input array (usually image or video).
@@ -100,8 +101,8 @@ def inv_normalize(
     Args:
         data: Input array, can be a NumPy array or a PyTorch tensor,
               which has been previously normalized.
-        mean: Scalar or vector of means used in the original normalization.
-        std: Scalar or vector of standard deviations used in the original normalization.
+        mean: Numeric scalar or vector of means used in the original normalization.
+        std: Numeric scalar or vector of standard deviations used in the original normalization.
         dim: The channel dimension along which normalization was applied.
              Default is -1 (last dimension).
 
