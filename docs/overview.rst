@@ -26,7 +26,6 @@ Utilities are grouped roughly by domain:
 - Distributed helpers: ``dl_utils.distributed``.
 - Filesystem helpers: ``dl_utils.fs``.
 - Inference helpers: ``dl_utils.inference``.
-- Visualization helpers: ``dl_utils.visualize``.
 - Misc utilities: top-level modules like ``dl_utils.timer``, ``dl_utils.mask_utils``.
 
 

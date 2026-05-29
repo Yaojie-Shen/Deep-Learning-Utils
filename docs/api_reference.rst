@@ -140,23 +140,6 @@ The following modules require optional dependencies and are not expanded here by
 - ``dl_utils.inference.ray_inference_utils`` (install with ``pip install dl-utils[ray]``)
 - ``dl_utils.inference.ollama_utils`` (install with ``pip install dl-utils[ollama]``)
 
-Visualize
----------
-
-Plot
-^^^^
-.. automodule:: dl_utils.visualize.plot
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Image/Video Visualize
-^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: dl_utils.visualize.image_video_visualize
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 Misc
 ----
 
