@@ -26,19 +26,19 @@ class Worker:
 
 
 def test_scheduler_balances_load():
-    """Create 10 actors (9x 0.1s, 1x 1.0s), run 91 tasks and ensure elapsed time is ~1s.
+    """Create 10 actors (9x 0.1s, 1x 1.5s), run 101 tasks and ensure elapsed time is ~1.5s.
 
-    With queue_max_size=1 there are 10 concurrent slots. The 9 fast actors
-    will each process ~10 tasks in ~1s (0.1s per task), and the slow actor will
-    process 1 task in ~1s, so 91 tasks should finish close to 1 second.
+    With queue_max_size=1 there are 10 concurrent slots. The 10 fast actors
+    will each process ~10 tasks in ~1.0s (0.1s per task), and the slow actor will
+    process 1 task in ~1.5s, so 101 tasks should finish close to 1.5 seconds.
     """
     # Start Ray
     ray.init(ignore_reinit_error=True)
 
     try:
-        # Create 9 fast actors and 1 slow actor, wait for them to be ready before continuing
-        actors = [Worker.remote(idx, 0.01) for idx in range(9)]
-        actors.append(Worker.remote(9, 1.0))
+        # Create 10 fast actors and 1 slow actor, wait for them to be ready before continuing
+        actors = [Worker.remote(idx, 0.1) for idx in range(10)]
+        actors.append(Worker.remote(10, 1.5))
 
         # actor_fn: call the remote process method
         def actor_fn(actor, x):
@@ -70,8 +70,8 @@ def test_scheduler_balances_load():
         print(f"Schedule count per worker: {schdule_count}")
         assert submit_time < 0.5, f"Submit should be fast, but took {submit_time:.2f}s"
         assert wait_time < 3, f"Tasks should finish in ~s, but took {wait_time:.2f}s"
-        assert schdule_count[9] == 1, (
-            f"Slow worker should process 1 task, but processed {schdule_count[9]}"
+        assert schdule_count[10] == 1, (
+            f"Slow worker should process 1 task, but processed {schdule_count[10]}"
         )
     finally:
         ray.shutdown()

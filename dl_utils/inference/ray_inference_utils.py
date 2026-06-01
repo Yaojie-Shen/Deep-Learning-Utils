@@ -80,7 +80,6 @@ class RayActorScheduler:
         actors: List[ray.actor.ActorHandle],
         actor_fn: Callable[[ray.actor.ActorHandle, ...], ray.ObjectRef],
         queue_max_size: int = 2,
-        scheduler_max_concurrency: int = 10000,
     ):
         assert actors and all(isinstance(a, ray.actor.ActorHandle) for a in actors), (
             "actors must be a non-empty list of Ray actor handles"
@@ -92,7 +91,9 @@ class RayActorScheduler:
         # A single Ray actor does both dispatching and monitoring.
         # submit() on driver returns immediately.
         self._scheduler_actor = _RayActorSchedulerActor.options(
-            max_concurrency=scheduler_max_concurrency
+            max_concurrency=queue_max_size
+            * len(actors)
+            * 2  # Allow some extra concurrency for waiting
         ).remote(actors=actors, actor_fn=actor_fn, queue_max_size=queue_max_size)
 
     def submit(self, *args, **kwargs):
