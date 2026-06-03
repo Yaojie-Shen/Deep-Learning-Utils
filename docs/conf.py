@@ -43,6 +43,8 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
 
+# Site icon (favicon)
+html_favicon = "_static/toolbox.svg"
 
 
 autodoc_member_order = 'bysource'
@@ -52,3 +54,11 @@ autodoc_default_options = {
     "undoc-members": True,
     "show-inheritance": True,
 }
+
+# Some modules depend on optional extras (e.g. ray). We still want their
+# API docs to render even when these extras are not installed in the doc build
+# environment.
+autodoc_mock_imports = [
+    "ray",
+    "ollama",
+]
