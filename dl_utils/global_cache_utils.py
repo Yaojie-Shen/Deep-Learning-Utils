@@ -6,7 +6,7 @@
 import pickle
 from collections import OrderedDict
 from collections.abc import MutableMapping
-from typing import Optional, Callable, Any
+from typing import Any, Callable, Optional
 
 
 class GlobalCache(MutableMapping):
@@ -108,7 +108,9 @@ class GlobalCache(MutableMapping):
             pickle.dump(self.cache, f)
 
     @classmethod
-    def load(cls, file_path: str, max_size: Optional[int] = None, update: bool = True) -> "GlobalCache":
+    def load(
+        cls, file_path: str, max_size: Optional[int] = None, update: bool = True
+    ) -> "GlobalCache":
         """Load cache from file and optionally set new max_size, return a GlobalCache instance.
 
         Args:
@@ -136,7 +138,9 @@ class GlobalCache(MutableMapping):
         return pickle.dumps(self.cache)
 
     @classmethod
-    def from_bytes(cls, data: bytes, max_size: Optional[int] = None, update: bool = True) -> "GlobalCache":
+    def from_bytes(
+        cls, data: bytes, max_size: Optional[int] = None, update: bool = True
+    ) -> "GlobalCache":
         """Deserialize bytes and optionally set new max_size, return a GlobalCache instance.
 
         Args:
@@ -155,6 +159,4 @@ class GlobalCache(MutableMapping):
         return instance
 
 
-__all__ = [
-    "GlobalCache"
-]
+__all__ = ["GlobalCache"]

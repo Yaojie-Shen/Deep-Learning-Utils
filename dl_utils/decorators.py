@@ -9,14 +9,16 @@ from functools import wraps
 from typing import Any, Callable, Optional
 
 
-def log_on_entry(fn: Callable | None = None, print_fn: Optional[Callable[[str], Any]] = None) -> Callable:
+def log_on_entry(
+    fn: Callable | None = None, print_fn: Optional[Callable[[str], Any]] = None
+) -> Callable:
     """
     Functions with this decorator will log the function name at entry.
     When using multiple decorators, this must be applied innermost to properly capture the name.
     """
     if print_fn is None:
-        print(f"print_fn is none")
-        print_fn = (lambda x: print(f"Entering {x}"))
+        print("print_fn is none")
+        print_fn = lambda x: print(f"Entering {x}")
 
     if fn is None:
         return lambda _fn: log_on_entry(_fn, print_fn=print_fn)

@@ -3,11 +3,11 @@
 # @Author  : Yaojie Shen
 # @Project : Deep-Learning-Utils
 # @File    : id_utils.py
+import hashlib
 import json
-import re
 import os
 import random
-import hashlib
+import re
 import uuid
 from pathlib import Path
 from typing import Any, Callable, Iterable
@@ -112,7 +112,6 @@ def list_ids(
             include_patterns = compile_patterns(include)
 
         for name, path_str, is_file, is_dir in candidates:
-
             # include filter
             if include_patterns and not matches_any(name, include_patterns):
                 continue

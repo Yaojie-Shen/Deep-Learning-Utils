@@ -17,9 +17,8 @@ except ImportError:
 
 
 def sample_evenly(
-        input_data: Union[List[Any], np.ndarray, 'torch.Tensor', Sequence[Any]],
-        n: int
-) -> Union[np.ndarray, List[Any], 'torch.Tensor']:
+    input_data: Union[List[Any], np.ndarray, "torch.Tensor", Sequence[Any]], n: int
+) -> Union[np.ndarray, List[Any], "torch.Tensor"]:
     """
     Evenly sample N elements from input_data. Supports list, numpy array, or torch tensor.
     The input_data can be empty, and n can be less than or equal to 0, in which case it will return empty data.
@@ -53,9 +52,12 @@ def sample_evenly(
 
 
 def sample_randomly(
-        input_data: Union[List[Any], np.ndarray, 'torch.Tensor', Sequence[Any]],
-        n: int, ordered: bool = False, seed: int = None, put_back: bool = False
-) -> Union[np.ndarray, List[Any], 'torch.Tensor']:
+    input_data: Union[List[Any], np.ndarray, "torch.Tensor", Sequence[Any]],
+    n: int,
+    ordered: bool = False,
+    seed: int = None,
+    put_back: bool = False,
+) -> Union[np.ndarray, List[Any], "torch.Tensor"]:
     """
     Randomly sample N elements from input_data. Supports list, numpy array, or torch tensor.
 
@@ -69,13 +71,14 @@ def sample_randomly(
     Returns:
         Sampled data in the same type as input_data.
     """
-    assert n > 0, \
-        f"n must be positive, got {n}"
-    assert len(input_data) > 0, \
+    assert n > 0, f"n must be positive, got {n}"
+    assert len(input_data) > 0, (
         f"input_data must have at least one element, got {len(input_data)}"
+    )
     if not put_back:
-        assert n <= len(input_data), \
+        assert n <= len(input_data), (
             f"n must be less than or equal to the length of input_data (without replacement), got {n} vs. {len(input_data)}"
+        )
 
     rng = np.random.default_rng(seed)
 
@@ -92,11 +95,9 @@ def sample_randomly(
         if seed is not None:
             generator.manual_seed(seed)
         if put_back:
-            indices = torch.randint(
-                0, input_data.size(0), (n,), generator=generator)
+            indices = torch.randint(0, input_data.size(0), (n,), generator=generator)
         else:
-            indices = torch.randperm(
-                input_data.size(0), generator=generator)[:n]
+            indices = torch.randperm(input_data.size(0), generator=generator)[:n]
         if ordered:
             indices, _ = torch.sort(indices)
         return input_data[indices]
@@ -112,8 +113,9 @@ def sample_randomly(
 
 
 def sample_contiguous(
-        input_data: Union[List[Any], np.ndarray, 'torch.Tensor', Sequence[Any]],
-        n: int, seed: Optional[int] = None
+    input_data: Union[List[Any], np.ndarray, "torch.Tensor", Sequence[Any]],
+    n: int,
+    seed: Optional[int] = None,
 ):
     """
     Randomly sample a contiguous slice of length n from input_data.
@@ -126,15 +128,16 @@ def sample_contiguous(
     Returns:
         A contiguous slice of length n from input_data, in the same type as input_data.
     """
-    assert 0 <= n <= len(input_data), \
+    assert 0 <= n <= len(input_data), (
         f"The length of the slice must be between 0 and {len(input_data)}, but got {n}."
+    )
 
     if n == 0:
         return input_data[:0]
 
     rng = np.random.default_rng(seed)
     start = rng.integers(0, len(input_data) - n + 1)
-    return input_data[start:start+n]
+    return input_data[start : start + n]
 
 
 __all__ = [

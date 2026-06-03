@@ -8,7 +8,7 @@ import socket
 import subprocess
 import time
 
-from ollama import ChatResponse, chat, pull, AsyncClient
+from ollama import AsyncClient, ChatResponse, chat, pull
 
 
 def is_ollama_running(host="127.0.0.1", port=11434) -> bool:
@@ -30,9 +30,9 @@ def start_ollama_background(*args):
 
 
 def ensure_ollama_running(
-        *args,
-        max_retries: int = 16,
-        wait_seconds: int = 1,
+    *args,
+    max_retries: int = 16,
+    wait_seconds: int = 1,
 ):
     """
     Ensure that Ollama server is running, start it if not.

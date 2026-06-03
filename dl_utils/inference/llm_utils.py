@@ -10,7 +10,6 @@ import re
 from pathlib import Path
 from typing import Any, Mapping, Optional, Sequence, Union
 
-
 PathLike = Union[str, os.PathLike]
 
 
@@ -33,15 +32,17 @@ def _looks_like_prompt_path(value: PathLike, extensions: Sequence[str]) -> bool:
 
     normalized_extensions = _normalize_extensions(extensions)
     suffix = Path(value).suffix
-    has_path_separator = os.sep in value or (os.altsep is not None and os.altsep in value)
+    has_path_separator = os.sep in value or (
+        os.altsep is not None and os.altsep in value
+    )
     return suffix in normalized_extensions or has_path_separator
 
 
 def _resolve_prompt_path(
-        prompt_dir: PathLike,
-        prompt_name: str,
-        version: Optional[str] = None,
-        extensions: Sequence[str] = (".txt", ".md"),
+    prompt_dir: PathLike,
+    prompt_name: str,
+    version: Optional[str] = None,
+    extensions: Sequence[str] = (".txt", ".md"),
 ) -> Path:
     prompt_dir = Path(prompt_dir).expanduser()
     prompt_name_path = Path(prompt_name)
@@ -55,13 +56,17 @@ def _resolve_prompt_path(
         if version is not None:
             version = str(version)
             for ext in normalized_extensions:
-                candidates.extend([
-                    prompt_dir / f"{prompt_name}_{version}{ext}",
-                    prompt_dir / f"{prompt_name}.{version}{ext}",
-                    prompt_dir / prompt_name / f"{version}{ext}",
-                ])
+                candidates.extend(
+                    [
+                        prompt_dir / f"{prompt_name}_{version}{ext}",
+                        prompt_dir / f"{prompt_name}.{version}{ext}",
+                        prompt_dir / prompt_name / f"{version}{ext}",
+                    ]
+                )
         else:
-            candidates.extend(prompt_dir / f"{prompt_name}{ext}" for ext in normalized_extensions)
+            candidates.extend(
+                prompt_dir / f"{prompt_name}{ext}" for ext in normalized_extensions
+            )
 
     for candidate in candidates:
         if candidate.is_file():
@@ -72,14 +77,14 @@ def _resolve_prompt_path(
 
 
 def load_prompt(
-        prompt: Optional[PathLike] = None,
-        *,
-        prompt_dir: Optional[PathLike] = None,
-        prompt_name: Optional[str] = None,
-        version: Optional[str] = None,
-        extensions: Sequence[str] = (".txt", ".md"),
-        encoding: str = "utf-8",
-        input_type: str = "auto",
+    prompt: Optional[PathLike] = None,
+    *,
+    prompt_dir: Optional[PathLike] = None,
+    prompt_name: Optional[str] = None,
+    version: Optional[str] = None,
+    extensions: Sequence[str] = (".txt", ".md"),
+    encoding: str = "utf-8",
+    input_type: str = "auto",
 ) -> str:
     """
     Load prompt text from a file path, a prompt directory, or return text directly.
@@ -114,7 +119,9 @@ def load_prompt(
         return path.read_text(encoding=encoding)
 
     if prompt is None:
-        raise ValueError("Either prompt or both prompt_dir and prompt_name must be provided.")
+        raise ValueError(
+            "Either prompt or both prompt_dir and prompt_name must be provided."
+        )
 
     if input_type == "text":
         return str(prompt)
@@ -141,11 +148,11 @@ def _format_bracket_prompt(prompt: str, variables: Mapping[str, Any]) -> str:
 
 
 def format_prompt(
-        prompt: str,
-        variables: Optional[Mapping[str, Any]] = None,
-        *,
-        style: Optional[str] = "format",
-        **kwargs: Any,
+    prompt: str,
+    variables: Optional[Mapping[str, Any]] = None,
+    *,
+    style: Optional[str] = "format",
+    **kwargs: Any,
 ) -> str:
     """
     Fill placeholders in a prompt string.
@@ -174,21 +181,23 @@ def format_prompt(
     if style in {"bracket", "square"}:
         return _format_bracket_prompt(prompt, data)
 
-    raise ValueError("style must be one of: 'format', 'brace', 'python', 'bracket', 'square', 'none'.")
+    raise ValueError(
+        "style must be one of: 'format', 'brace', 'python', 'bracket', 'square', 'none'."
+    )
 
 
 def render_prompt(
-        prompt: Optional[PathLike] = None,
-        variables: Optional[Mapping[str, Any]] = None,
-        *,
-        prompt_dir: Optional[PathLike] = None,
-        prompt_name: Optional[str] = None,
-        version: Optional[str] = None,
-        extensions: Sequence[str] = (".txt", ".md"),
-        encoding: str = "utf-8",
-        input_type: str = "auto",
-        style: Optional[str] = "format",
-        **kwargs: Any,
+    prompt: Optional[PathLike] = None,
+    variables: Optional[Mapping[str, Any]] = None,
+    *,
+    prompt_dir: Optional[PathLike] = None,
+    prompt_name: Optional[str] = None,
+    version: Optional[str] = None,
+    extensions: Sequence[str] = (".txt", ".md"),
+    encoding: str = "utf-8",
+    input_type: str = "auto",
+    style: Optional[str] = "format",
+    **kwargs: Any,
 ) -> str:
     """
     Load a prompt from path/text and fill placeholders in one call.
@@ -242,9 +251,7 @@ def extract_json(llm_output: str) -> Any:
             pass  # fall through to more general extraction
 
     # 2. Fallback: find the first valid JSON object or array by scanning
-    start_indices = [
-        i for i, ch in enumerate(llm_output) if ch in "{["
-    ]
+    start_indices = [i for i, ch in enumerate(llm_output) if ch in "{["]
 
     for start in start_indices:
         for end in range(len(llm_output), start, -1):

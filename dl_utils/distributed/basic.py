@@ -5,7 +5,7 @@
 # @File    : basic.py
 
 import os
-from typing import Union, Callable, Any
+from typing import Any, Callable, Union
 
 import torch
 import torch.distributed as dist

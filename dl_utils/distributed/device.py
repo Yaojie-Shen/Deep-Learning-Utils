@@ -33,7 +33,9 @@ def recursive_to(obj: Any, *args, **kwargs) -> Any:
         This operation is in-place. You should **copy** if you want to keep the original object.
     """
     if (not args) and (not kwargs):
-        kwargs['device'] = torch.cuda.current_device() if torch.cuda.is_available() else "cpu"
+        kwargs["device"] = (
+            torch.cuda.current_device() if torch.cuda.is_available() else "cpu"
+        )
 
     if isinstance(obj, torch.Tensor):
         return obj.to(*args, **kwargs)

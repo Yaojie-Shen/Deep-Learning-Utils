@@ -9,18 +9,17 @@ from typing import TYPE_CHECKING
 from .import_utils import _LazyModule, define_import_structure
 
 if TYPE_CHECKING:
-    from .data import *
-    from .distributed import *
-    from .fs import *
-    from .inference import *
-
     from .chunk_utils import *
+    from .data import *
     from .decorators import *
+    from .distributed import *
     from .env_utils import *
+    from .fs import *
     from .global_cache_utils import *
     from .id_utils import *
-    from .mask_utils import *
+    from .inference import *
     from .inspect_data_utils import *
+    from .mask_utils import *
     from .memory_utils import *
     from .prefetcher import *
     from .timer import *
@@ -29,4 +28,6 @@ else:
     import sys
 
     _file = globals()["__file__"]
-    sys.modules[__name__] = _LazyModule(__name__, _file, define_import_structure(_file), module_spec=__spec__)
+    sys.modules[__name__] = _LazyModule(
+        __name__, _file, define_import_structure(_file), module_spec=__spec__
+    )

@@ -12,16 +12,16 @@ import cv2
 import numpy as np
 from joblib import Parallel, delayed
 
-from .array import to_numpy
 from .. import make_parent_dirs
 from ..type_hint import ArrayLike, PathLike
+from .array import to_numpy
 
 
 def save_video(
-        frames: ArrayLike,
-        save_path: PathLike,
-        fps: Union[int, float] = 30,
-        codec: str = "avc1"
+    frames: ArrayLike,
+    save_path: PathLike,
+    fps: Union[int, float] = 30,
+    codec: str = "avc1",
 ):
     """
     Save video frames to a video file utilizing opencv.
@@ -43,8 +43,10 @@ def save_video(
 
     # Ensure the video writer is opened successfully
     if not out.isOpened():
-        raise RuntimeError("Failed to open video writer, consider setting the codec to 'XVID' for compatibility. "
-                           "Check the opencv error message above for more details.")
+        raise RuntimeError(
+            "Failed to open video writer, consider setting the codec to 'XVID' for compatibility. "
+            "Check the opencv error message above for more details."
+        )
 
     for frame in frames:
         out.write(frame)
@@ -52,10 +54,10 @@ def save_video(
 
 
 def load_video(
-        video_path: PathLike,
-        resize: Union[Tuple[int, int], int] = None,
-        center_crop: Union[Tuple[int, int], int] = None,
-        max_frames: int = None,
+    video_path: PathLike,
+    resize: Union[Tuple[int, int], int] = None,
+    center_crop: Union[Tuple[int, int], int] = None,
+    max_frames: int = None,
 ) -> np.ndarray:
     """
     Load a video file.
@@ -74,7 +76,7 @@ def load_video(
     """
     cap = cv2.VideoCapture(video_path)
     if not cap.isOpened():
-        raise RuntimeError(f"Failed to open video capture.")
+        raise RuntimeError("Failed to open video capture.")
 
     frames = []
 
@@ -94,11 +96,17 @@ def load_video(
         if resize is not None:
             if isinstance(resize, int):
                 # Resize by short edge
-                resize = (resize, int(resize * h / w)) if h > w else (int(resize * w / h), resize)
+                resize = (
+                    (resize, int(resize * h / w))
+                    if h > w
+                    else (int(resize * w / h), resize)
+                )
             elif isinstance(resize, tuple) or isinstance(resize, list):
                 assert len(resize) == 2, "'resize' should be a tuple/list of two."
             else:
-                raise ValueError(f"Invalid resize value: {resize}, expected int or tuple/list of two.")
+                raise ValueError(
+                    f"Invalid resize value: {resize}, expected int or tuple/list of two."
+                )
 
             frame = cv2.resize(frame, resize)
 
@@ -108,17 +116,24 @@ def load_video(
             if isinstance(center_crop, int):
                 center_crop = (center_crop, center_crop)
             elif isinstance(center_crop, tuple) or isinstance(center_crop, list):
-                assert len(center_crop) == 2, "'center_crop' should be a tuple/list of two."
+                assert len(center_crop) == 2, (
+                    "'center_crop' should be a tuple/list of two."
+                )
             else:
-                raise ValueError(f"Invalid center_crop value: {center_crop}, expected int or tuple/list of two.")
+                raise ValueError(
+                    f"Invalid center_crop value: {center_crop}, expected int or tuple/list of two."
+                )
 
-            assert h >= center_crop[1] and w >= center_crop[0], \
+            assert h >= center_crop[1] and w >= center_crop[0], (
                 f"Frame size ({h}, {w}) is smaller than center crop size ({center_crop[0]}, {center_crop[1]})."
+            )
 
             frame = frame[
-                    h // 2 - center_crop[1] // 2:h // 2 + (center_crop[1] - center_crop[1] // 2),
-                    w // 2 - center_crop[0] // 2:w // 2 + (center_crop[0] - center_crop[0] // 2)
-                    ]
+                h // 2 - center_crop[1] // 2 : h // 2
+                + (center_crop[1] - center_crop[1] // 2),
+                w // 2 - center_crop[0] // 2 : w // 2
+                + (center_crop[0] - center_crop[0] // 2),
+            ]
 
         frames.append(frame)
         count += 1
@@ -140,6 +155,7 @@ def get_video_fps(video_path: PathLike) -> float:
         The FPS of the video.
     """
     import cv2
+
     video = cv2.VideoCapture(video_path)
     fps = video.get(cv2.CAP_PROP_FPS)
     return fps
@@ -156,6 +172,7 @@ def get_video_frame_count(video_path: PathLike) -> int:
         The number of frames in the video.
     """
     import cv2
+
     video = cv2.VideoCapture(video_path)
     frame_count = video.get(cv2.CAP_PROP_FRAME_COUNT)
     return int(frame_count)
@@ -171,6 +188,7 @@ def get_video_duration(video_path: PathLike) -> Tuple[float, int, float]:
         A tuple containing FPS, frame count, and duration in seconds.
     """
     import cv2
+
     video = cv2.VideoCapture(video_path)
     fps = video.get(cv2.CAP_PROP_FPS)
     frame_count = int(video.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -192,11 +210,14 @@ def get_video_duration_batch(video_paths: List[PathLike]) -> List[float]:
     )
 
 
-def convert_to_h265(input_file: AnyStr, output_file: AnyStr,
-                    ffmpeg_exec: AnyStr = "/usr/bin/ffmpeg",
-                    keyint: int = None,
-                    overwrite: bool = False,
-                    verbose: bool = False) -> None:
+def convert_to_h265(
+    input_file: AnyStr,
+    output_file: AnyStr,
+    ffmpeg_exec: AnyStr = "/usr/bin/ffmpeg",
+    keyint: int = None,
+    overwrite: bool = False,
+    verbose: bool = False,
+) -> None:
     """
     convert video to h265 format using ffmpeg
     @param input_file: input path
@@ -211,45 +232,104 @@ def convert_to_h265(input_file: AnyStr, output_file: AnyStr,
     # https://stackoverflow.com/questions/49686244/ffmpeg-too-many-packets-buffered-for-output-stream-01
     # <!> This may cause OOM error.
     if keyint is None:
-        command = [ffmpeg_exec, "-i", f"{input_file}", "-max_muxing_queue_size", "9999",
-                   "-c:v", "libx265", "-vtag", "hvc1",
-                   "-c:a", "copy", "-movflags", "faststart", f"{output_file}"]
+        command = [
+            ffmpeg_exec,
+            "-i",
+            f"{input_file}",
+            "-max_muxing_queue_size",
+            "9999",
+            "-c:v",
+            "libx265",
+            "-vtag",
+            "hvc1",
+            "-c:a",
+            "copy",
+            "-movflags",
+            "faststart",
+            f"{output_file}",
+        ]
     else:
-        command = [ffmpeg_exec, "-i", f"{input_file}", "-max_muxing_queue_size", "9999",
-                   "-c:v", "libx265", "-vtag", "hvc1", "-x265-params", f"keyint={keyint}",
-                   "-c:a", "copy", "-movflags", "faststart", f"{output_file}"]
+        command = [
+            ffmpeg_exec,
+            "-i",
+            f"{input_file}",
+            "-max_muxing_queue_size",
+            "9999",
+            "-c:v",
+            "libx265",
+            "-vtag",
+            "hvc1",
+            "-x265-params",
+            f"keyint={keyint}",
+            "-c:a",
+            "copy",
+            "-movflags",
+            "faststart",
+            f"{output_file}",
+        ]
     if overwrite:
         command += ["-y"]
     else:
         command += ["-n"]
-    subprocess.run(command,
-                   stderr=subprocess.DEVNULL if not verbose else None,
-                   stdout=subprocess.DEVNULL if not verbose else None)
+    subprocess.run(
+        command,
+        stderr=subprocess.DEVNULL if not verbose else None,
+        stdout=subprocess.DEVNULL if not verbose else None,
+    )
     # TODO: return
 
 
-def convert_to_h264(input_file: AnyStr, output_file: AnyStr,
-                    ffmpeg_exec: AnyStr = "/usr/bin/ffmpeg",
-                    keyint: int = None,
-                    overwrite: bool = False,
-                    verbose: bool = False) -> None:
+def convert_to_h264(
+    input_file: AnyStr,
+    output_file: AnyStr,
+    ffmpeg_exec: AnyStr = "/usr/bin/ffmpeg",
+    keyint: int = None,
+    overwrite: bool = False,
+    verbose: bool = False,
+) -> None:
     os.makedirs(os.path.dirname(output_file), exist_ok=True)
 
     if keyint is None:
-        command = [ffmpeg_exec, "-i", f"{input_file}", "-max_muxing_queue_size", "9999",
-                   "-c:v", "libx264",
-                   "-c:a", "copy", "-movflags", "faststart", f"{output_file}"]
+        command = [
+            ffmpeg_exec,
+            "-i",
+            f"{input_file}",
+            "-max_muxing_queue_size",
+            "9999",
+            "-c:v",
+            "libx264",
+            "-c:a",
+            "copy",
+            "-movflags",
+            "faststart",
+            f"{output_file}",
+        ]
     else:
-        command = [ffmpeg_exec, "-i", f"{input_file}", "-max_muxing_queue_size", "9999",
-                   "-c:v", "libx264", "-x264-params", f"keyint={keyint}",
-                   "-c:a", "copy", "-movflags", "faststart", f"{output_file}"]
+        command = [
+            ffmpeg_exec,
+            "-i",
+            f"{input_file}",
+            "-max_muxing_queue_size",
+            "9999",
+            "-c:v",
+            "libx264",
+            "-x264-params",
+            f"keyint={keyint}",
+            "-c:a",
+            "copy",
+            "-movflags",
+            "faststart",
+            f"{output_file}",
+        ]
     if overwrite:
         command += ["-y"]
     else:
         command += ["-n"]
-    subprocess.run(command,
-                   stderr=subprocess.DEVNULL if not verbose else None,
-                   stdout=subprocess.DEVNULL if not verbose else None)
+    subprocess.run(
+        command,
+        stderr=subprocess.DEVNULL if not verbose else None,
+        stdout=subprocess.DEVNULL if not verbose else None,
+    )
     # TODO: return
 
 
@@ -261,5 +341,5 @@ __all__ = [
     "get_video_duration",
     "get_video_duration_batch",
     "convert_to_h265",
-    "convert_to_h264"
+    "convert_to_h264",
 ]

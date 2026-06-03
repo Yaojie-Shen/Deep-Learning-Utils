@@ -10,7 +10,7 @@ from io import BytesIO
 import numpy as np
 from PIL import Image
 
-__all__ = ['byte_imread', "byte_imwrite"]
+__all__ = ["byte_imread", "byte_imwrite"]
 
 
 def byte_imread(data: bytes) -> np.ndarray:

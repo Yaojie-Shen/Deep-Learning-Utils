@@ -18,10 +18,10 @@ __all__ = ["download"]
 
 # Modified from: https://github.com/openai/CLIP/blob/main/clip/clip.py
 def download(
-        url: str,
-        filepath: Optional[str] = None,
-        expected_sha256: Optional[str] = None,
-        cache_dir: str = "~/.cache/dl_utils",
+    url: str,
+    filepath: Optional[str] = None,
+    expected_sha256: Optional[str] = None,
+    cache_dir: str = "~/.cache/dl_utils",
 ):
     """
     Download file from URL to the given path in a multi-process safe way.
@@ -76,12 +76,12 @@ def download(
             total = int(total) if total is not None else None
 
             with tqdm(
-                    total=total,
-                    ncols=80,
-                    unit="iB",
-                    unit_scale=True,
-                    unit_divisor=1024,
-                    disable=total is None,
+                total=total,
+                ncols=80,
+                unit="iB",
+                unit_scale=True,
+                unit_divisor=1024,
+                disable=total is None,
             ) as pbar:
                 while True:
                     buffer = source.read(8192)
