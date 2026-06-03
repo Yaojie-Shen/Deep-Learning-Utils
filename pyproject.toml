@@ -1,10 +1,10 @@
 [project]
 name = "dl-utils"
-version = "0.2.0"
+version = "0.3.0"
 description = ""
 readme = "README.md"
 license = { file = "LICENSE" }
-requires-python = ">=3.7"
+requires-python = ">=3.8"
 authors = [{ name = "Yaojie Shen", email = "syj.micro@outlook.com" }]
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -12,8 +12,10 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 dependencies = [
+    "filelock",
     "numpy",
     "joblib",
+    "packaging",
     "tqdm",
     "matplotlib",
     "setuptools",
@@ -22,12 +24,19 @@ dependencies = [
     "tabulate",
     "lmdbm",
     "pandas",
+    "rich>=14.3.4",
 ]
 
 [project.optional-dependencies]
 test = ["pytest"]
 ollama = ["ollama"]
 ray = ["ray"]
+docs = [
+    "sphinx",
+    "myst-parser",
+    "sphinx-rtd-theme",
+    "sphinxcontrib-programoutput",
+]
 
 [project.urls]
 source_code = "https://github.com/yaojie-shen/Deep-Learning-Utils"
@@ -40,7 +49,4 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-exclude = ["venv*", "data*", "test*", "output*", "docs*"]
-
-[tool.whell]
 exclude = ["venv*", "data*", "test*", "output*", "docs*"]

@@ -5,7 +5,7 @@
 # @File    : gather.py
 
 import itertools
-from typing import List, Any
+from typing import Any, List
 
 import torch.distributed as dist
 

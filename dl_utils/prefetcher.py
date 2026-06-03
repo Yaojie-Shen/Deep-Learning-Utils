@@ -7,7 +7,7 @@
 
 __all__ = ["CudaPreFetcher"]
 
-from typing import Union, List, Any, AnyStr
+from typing import Union
 
 import torch
 from torch.utils import data

@@ -6,8 +6,7 @@
 
 import datetime
 import time
-from collections import defaultdict
-from collections import deque
+from collections import defaultdict, deque
 from typing import Optional
 
 from tabulate import tabulate
@@ -95,11 +94,13 @@ class ExecutionTimer(Timer):
     """
 
     def __init__(
-            self,
-            history_size: Optional[int] = None,
-            precision: int = 2,
-            start_prompt: str = None, end_prompt: str = None, log: bool = False,
-            name: Optional[str] = None,
+        self,
+        history_size: Optional[int] = None,
+        precision: int = 2,
+        start_prompt: str = None,
+        end_prompt: str = None,
+        log: bool = False,
+        name: Optional[str] = None,
     ):
         super().__init__(precision=precision)
 
@@ -108,10 +109,16 @@ class ExecutionTimer(Timer):
         self._stage_log = defaultdict(lambda: deque(maxlen=history_size))
 
         self._enable_log = log
-        self._start_log_prompt = \
-            "({ctime}) {name} => starting stage: {stage}..." if start_prompt is None else start_prompt
-        self._end_log_prompt = \
-            "({ctime}) {name} => finished stage: {stage} | took {duration:.3f} ms." if end_prompt is None else end_prompt
+        self._start_log_prompt = (
+            "({ctime}) {name} => starting stage: {stage}..."
+            if start_prompt is None
+            else start_prompt
+        )
+        self._end_log_prompt = (
+            "({ctime}) {name} => finished stage: {stage} | took {duration:.3f} ms."
+            if end_prompt is None
+            else end_prompt
+        )
 
         self._name = name
 
@@ -126,8 +133,7 @@ class ExecutionTimer(Timer):
         Note:
             Only for sequential use.
         """
-        assert name is None or isinstance(name, str), \
-            f"Invalid stage name: {name}"
+        assert name is None or isinstance(name, str), f"Invalid stage name: {name}"
 
         # Previous stage is not finished
         if self._stage_name is not None:
@@ -138,8 +144,13 @@ class ExecutionTimer(Timer):
         self.reset()
 
         if self._enable_log and name is not None:
-            print(self._start_log_prompt.format(ctime=get_readable_timestamp(), stage=self._stage_name,
-                                                name=self._name or "ExecutionTimer"))
+            print(
+                self._start_log_prompt.format(
+                    ctime=get_readable_timestamp(),
+                    stage=self._stage_name,
+                    name=self._name or "ExecutionTimer",
+                )
+            )
 
     def end_stage(self, name: Optional[str] = None):
         """
@@ -151,32 +162,41 @@ class ExecutionTimer(Timer):
         Note:
             Only for sequential use.
         """
-        assert name is None or isinstance(name, str), \
-            f"Invalid stage name: {name}"
-        assert name is not None or self._stage_name is not None, \
+        assert name is None or isinstance(name, str), f"Invalid stage name: {name}"
+        assert name is not None or self._stage_name is not None, (
             "Stage name is unknown: it must be set once at the beginning or end of the stage"
+        )
 
         if name is None:
             name = self._stage_name
         elif self._stage_name is not None:
-            assert self._stage_name == name, \
+            assert self._stage_name == name, (
                 f"Stage name mismatch: {self._stage_name} (in process) != {name} (trying to end)"
+            )
 
         duration = self.get_duration_and_reset()
         self._stage_log[name].append(duration)
         self._stage_name = None
 
         if self._enable_log:
-            print(self._end_log_prompt.format(ctime=get_readable_timestamp(), stage=name, duration=duration,
-                                              name=self._name or "ExecutionTimer"))
+            print(
+                self._end_log_prompt.format(
+                    ctime=get_readable_timestamp(),
+                    stage=name,
+                    duration=duration,
+                    name=self._name or "ExecutionTimer",
+                )
+            )
 
     def __str__(self):
         out = ""
         info = self.summary()
         for stage_name, stage_info in info.items():
-            out += f"[{stage_name}]:\n\ttotal {stage_info['total']} ms\n" \
-                   f"\t{stage_info['count']}-iters range ({stage_info['min']}, {stage_info['max']})\n" \
-                   f"\tavg {stage_info['avg']} ms\n"
+            out += (
+                f"[{stage_name}]:\n\ttotal {stage_info['total']} ms\n"
+                f"\t{stage_info['count']}-iters range ({stage_info['min']}, {stage_info['max']})\n"
+                f"\tavg {stage_info['avg']} ms\n"
+            )
         return out
 
     def summary(self):
@@ -199,7 +219,8 @@ class ExecutionTimer(Timer):
                 "max": round(max(v), self._precision),
                 "last": round(v[-1], self._precision),
                 "count": len(v),
-            } for k, v in self._stage_log.items()
+            }
+            for k, v in self._stage_log.items()
         }
 
     def print_table(self):
@@ -208,22 +229,41 @@ class ExecutionTimer(Timer):
             self.end_stage()
 
         summary = self.summary()
-        data = [[k, v["total"], v["count"], v["min"], v["max"], v["avg"], v["last"]]
-                for k, v in summary.items()]
+        data = [
+            [k, v["total"], v["count"], v["min"], v["max"], v["avg"], v["last"]]
+            for k, v in summary.items()
+        ]
         total_time = sum(v["total"] for v in summary.values())
 
         table_str = tabulate(
             data,
-            headers=["Stage", "Total (ms)", "Count", "Min (ms)", "Max (ms)", "Avg (ms)", "Last (ms)"],
-            tablefmt="pipe", floatfmt=f".0{self._precision}f",
+            headers=[
+                "Stage",
+                "Total (ms)",
+                "Count",
+                "Min (ms)",
+                "Max (ms)",
+                "Avg (ms)",
+                "Last (ms)",
+            ],
+            tablefmt="pipe",
+            floatfmt=f".0{self._precision}f",
         )
 
         if self._name is not None:
-            name_str = f"=> {self._name} | Total Time: {total_time:.{self._precision}f} ms"
+            name_str = (
+                f"=> {self._name} | Total Time: {total_time:.{self._precision}f} ms"
+            )
         else:
             name_str = f"=> Total Time: {total_time:.{self._precision}f} ms"
 
         print(f"{name_str}\n{table_str}")
 
 
-__all__ = ["get_timestamp", "get_readable_timestamp", "get_current_time_in_ms", "Timer", "ExecutionTimer"]
+__all__ = [
+    "get_timestamp",
+    "get_readable_timestamp",
+    "get_current_time_in_ms",
+    "Timer",
+    "ExecutionTimer",
+]

@@ -132,27 +132,16 @@ QPS Control
    :undoc-members:
    :show-inheritance:
 
-Optional Inference Extras
-^^^^^^^^^^^^^^^^^^^^^^^^^
-
-The following modules require optional dependencies and are not expanded here by autodoc:
-
-- ``dl_utils.inference.ray_inference_utils`` (install with ``pip install dl-utils[ray]``)
-- ``dl_utils.inference.ollama_utils`` (install with ``pip install dl-utils[ollama]``)
-
-Visualize
----------
-
-Plot
-^^^^
-.. automodule:: dl_utils.visualize.plot
+Ray Inference Utils
+^^^^^^^^^^^^^^^^^^^
+.. automodule:: dl_utils.inference.ray_inference_utils
    :members:
    :undoc-members:
    :show-inheritance:
 
-Image/Video Visualize
-^^^^^^^^^^^^^^^^^^^^^
-.. automodule:: dl_utils.visualize.image_video_visualize
+Ollama Utils
+^^^^^^^^^^^^
+.. automodule:: dl_utils.inference.ollama_utils
    :members:
    :undoc-members:
    :show-inheritance:
@@ -219,13 +208,6 @@ Memory
 Prefetcher
 ^^^^^^^^^^
 .. automodule:: dl_utils.prefetcher
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-Type Hint
-^^^^^^^^^
-.. automodule:: dl_utils.type_hint
    :members:
    :undoc-members:
    :show-inheritance:

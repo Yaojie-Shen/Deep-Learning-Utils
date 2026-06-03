@@ -4,13 +4,14 @@
 # @Project : Deep-Learning-Utils
 # @File    : chunk_utils.py
 
-from typing import List, Any, Optional, Union, Callable
+from typing import Any, Callable, List, Optional, Union
 
 
 def chunk(
-        data: List[Any],
-        n_chunks: Optional[int] = None, chunk_size: Optional[int] = None,
-        idx: Optional[int] = None
+    data: List[Any],
+    n_chunks: Optional[int] = None,
+    chunk_size: Optional[int] = None,
+    idx: Optional[int] = None,
 ) -> Union[List[List[Any]], List[Any]]:
     """
     Split a list into multiple smaller chunks.
@@ -36,7 +37,7 @@ def chunk(
     if chunk_size:
         if chunk_size <= 0:
             raise ValueError("Chunk size must be greater than 0")
-        chunks = [data[i:i + chunk_size] for i in range(0, len(data), chunk_size)]
+        chunks = [data[i : i + chunk_size] for i in range(0, len(data), chunk_size)]
     elif n_chunks:
         if n_chunks <= 0:
             raise ValueError("Number of chunks must be greater than 0")
@@ -55,8 +56,9 @@ def chunk(
         raise RuntimeError
 
     # integrity check
-    assert sum(len(c) for c in chunks) == len(data), \
+    assert sum(len(c) for c in chunks) == len(data), (
         "The total length of chunks is not equal to the length of the input data."
+    )
 
     if idx is not None:
         return chunks[idx]
@@ -65,8 +67,11 @@ def chunk(
 
 
 def sort_chunk(
-        data: List[Any], key: Callable[[Any], Any] = lambda x: x, reverse: bool = False,
-        *args, **kwargs
+    data: List[Any],
+    key: Callable[[Any], Any] = lambda x: x,
+    reverse: bool = False,
+    *args,
+    **kwargs,
 ) -> Union[List[List[Any]], List[Any]]:
     """
     Sort a list and then split it into chunks.
@@ -86,7 +91,4 @@ def sort_chunk(
     return chunk(data, *args, **kwargs)
 
 
-__all__ = [
-    "chunk",
-    "sort_chunk"
-]
+__all__ = ["chunk", "sort_chunk"]

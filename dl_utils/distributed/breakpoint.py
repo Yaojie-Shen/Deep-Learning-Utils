@@ -6,7 +6,7 @@
 
 import sys
 
-from .basic import get_local_rank, barrier_if_distributed, get_world_size
+from .basic import barrier_if_distributed, get_local_rank, get_world_size
 
 
 def _require_ipython():
@@ -15,10 +15,11 @@ def _require_ipython():
         import IPython
     except ImportError:
         import pip
-        if hasattr(pip, 'main'):
-            pip.main(['install', "IPython"])
+
+        if hasattr(pip, "main"):
+            pip.main(["install", "IPython"])
         else:
-            pip._internal.main(['install', "IPython"])
+            pip._internal.main(["install", "IPython"])
 
 
 def _my_embed(*, stack_depth=2, header="", compile_flags=None, **kwargs):
@@ -32,7 +33,7 @@ def _my_embed(*, stack_depth=2, header="", compile_flags=None, **kwargs):
     from IPython.terminal.embed import InteractiveShellEmbed
     from IPython.terminal.ipapp import load_default_config
 
-    config = kwargs.get('config')
+    config = kwargs.get("config")
     if config is None:
         config = load_default_config()
         config.InteractiveShellEmbed = config.TerminalInteractiveShell
@@ -63,10 +64,15 @@ def _my_embed(*, stack_depth=2, header="", compile_flags=None, **kwargs):
         cls = type(saved_shell_instance)
         cls.clear_instance()
     frame = sys._getframe(1)
-    shell = InteractiveShellEmbed.instance(_init_location_id='%s:%s' % (
-        frame.f_code.co_filename, frame.f_lineno), **kwargs)
-    shell(header=header, stack_depth=stack_depth, compile_flags=compile_flags,
-          _call_location_id='%s:%s' % (frame.f_code.co_filename, frame.f_lineno))
+    shell = InteractiveShellEmbed.instance(
+        _init_location_id="%s:%s" % (frame.f_code.co_filename, frame.f_lineno), **kwargs
+    )
+    shell(
+        header=header,
+        stack_depth=stack_depth,
+        compile_flags=compile_flags,
+        _call_location_id="%s:%s" % (frame.f_code.co_filename, frame.f_lineno),
+    )
     InteractiveShellEmbed.clear_instance()
     # restore previous instance
     if saved_shell_instance is not None:
@@ -84,7 +90,9 @@ def dist_breakpoint(rank: int = 0):
     Breakpoint for distributed training.
     Enter the breakpoint only if the current rank is `rank`, and block all other processes using distributed barrier.
     """
-    assert 0 <= rank < get_world_size(), f"Invalid rank {rank}, world size: {get_world_size()}."
+    assert 0 <= rank < get_world_size(), (
+        f"Invalid rank {rank}, world size: {get_world_size()}."
+    )
     if get_local_rank() == rank:
         _my_embed(stack_depth=3)
     barrier_if_distributed()

@@ -22,7 +22,9 @@ def _normalize_newlines(value: str, allow_multiline: bool) -> str:
         return value.splitlines()[0]
 
 
-def get_env(name: str, allow_multiline: bool = False, cwd: str | Path | None = None) -> str:
+def get_env(
+    name: str, allow_multiline: bool = False, cwd: str | Path | None = None
+) -> str | list[str]:
     """Get a secret or config value from environment or a dotfile in the working directory.
 
     Lookup order (later overwrites earlier if both exist):

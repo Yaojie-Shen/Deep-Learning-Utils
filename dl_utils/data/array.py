@@ -7,10 +7,10 @@
 import numpy as np
 import torch
 
-from ..type_hint import ArrayLike, Scalar
+from ..type_hint import ArrayLike, ArrayOrScalar
 
 
-def to_numpy(array: ArrayLike | Scalar) -> np.ndarray:
+def to_numpy(array: ArrayOrScalar) -> np.ndarray:
     """
     Convert array-like object or scalar to NumPy array.
 
@@ -31,12 +31,12 @@ def to_numpy(array: ArrayLike | Scalar) -> np.ndarray:
         raise TypeError(f"Unsupported type: {type(array)}")
 
 
-def to_tensor(array: ArrayLike | Scalar, *args, **kwargs) -> torch.Tensor:
+def to_tensor(array: ArrayOrScalar, *args, **kwargs) -> torch.Tensor:
     """
     Convert a scalar or array-like object to a PyTorch tensor.
 
     Args:
-        array: Scalar or array-like object to convert.
+        array: Numeric scalar or array-like object to convert.
         *args: Additional arguments passed to torch.Tensor.to()
         **kwargs: Additional keyword arguments passed to torch.Tensor.to()
     """

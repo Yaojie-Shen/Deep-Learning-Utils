@@ -11,7 +11,6 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-
 DEFAULT_THRESHOLD = 127
 
 
@@ -72,7 +71,9 @@ def unbinarize_mask(mask, true_value: int = 255, false_value: int = 0, dtype=np.
     """
     arr = np.asarray(mask)
     if arr.dtype != np.bool_:
-        raise ValueError(f"`unbinarize_mask` expects a boolean mask, got dtype={arr.dtype} shape={arr.shape}")
+        raise ValueError(
+            f"`unbinarize_mask` expects a boolean mask, got dtype={arr.dtype} shape={arr.shape}"
+        )
     if arr.ndim != 2:
         raise ValueError(f"`unbinarize_mask` expects a 2D mask, got shape={arr.shape}")
 
@@ -82,10 +83,10 @@ def unbinarize_mask(mask, true_value: int = 255, false_value: int = 0, dtype=np.
 
 
 def load_mask(
-        path: str | Path,
-        threshold: int = DEFAULT_THRESHOLD,
-        invert: bool = False,
-        as_bool: bool = True,
+    path: str | Path,
+    threshold: int = DEFAULT_THRESHOLD,
+    invert: bool = False,
+    as_bool: bool = True,
 ):
     """Load a mask image from disk.
 
@@ -117,10 +118,10 @@ def load_mask(
 
 
 def save_mask(
-        mask,
-        path: str | Path,
-        threshold: int = DEFAULT_THRESHOLD,
-        invert: bool = False,
+    mask,
+    path: str | Path,
+    threshold: int = DEFAULT_THRESHOLD,
+    invert: bool = False,
 ):
     """Save a mask to an image file.
 
@@ -143,12 +144,13 @@ def save_mask(
     out = unbinarize_mask(m)
     # For uint8 2D arrays, Pillow will infer "L" mode.
     img = Image.fromarray(out)
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
     img.save(str(path))
 
 
 def union_masks(
-        *masks,
-        threshold: int = DEFAULT_THRESHOLD,
+    *masks,
+    threshold: int = DEFAULT_THRESHOLD,
 ):
     """Union (logical OR) of multiple masks.
 
@@ -168,13 +170,15 @@ def union_masks(
     ms = [binarize_mask(m, threshold=threshold) for m in masks]
     shape = ms[0].shape
     if any(x.shape != shape for x in ms[1:]):
-        raise ValueError(f"All masks must have the same shape, got: {[x.shape for x in ms]}")
+        raise ValueError(
+            f"All masks must have the same shape, got: {[x.shape for x in ms]}"
+        )
     return np.logical_or.reduce(ms)
 
 
 def intersect_masks(
-        *masks,
-        threshold: int = DEFAULT_THRESHOLD,
+    *masks,
+    threshold: int = DEFAULT_THRESHOLD,
 ):
     """Intersection (logical AND) of multiple masks.
 
@@ -194,14 +198,16 @@ def intersect_masks(
     ms = [binarize_mask(m, threshold=threshold) for m in masks]
     shape = ms[0].shape
     if any(x.shape != shape for x in ms[1:]):
-        raise ValueError(f"All masks must have the same shape, got: {[x.shape for x in ms]}")
+        raise ValueError(
+            f"All masks must have the same shape, got: {[x.shape for x in ms]}"
+        )
     return np.logical_and.reduce(ms)
 
 
 def subtract_mask(
-        a,
-        b,
-        threshold: int = DEFAULT_THRESHOLD,
+    a,
+    b,
+    threshold: int = DEFAULT_THRESHOLD,
 ):
     """Set difference: keep pixels in ``a`` but not in ``b`` (``a AND (NOT b)``).
 
@@ -219,13 +225,15 @@ def subtract_mask(
     a2 = binarize_mask(a, threshold=threshold)
     b2 = binarize_mask(b, threshold=threshold)
     if a2.shape != b2.shape:
-        raise ValueError(f"Masks must have the same shape, got: {a2.shape} vs {b2.shape}")
+        raise ValueError(
+            f"Masks must have the same shape, got: {a2.shape} vs {b2.shape}"
+        )
     return a2 & (~b2)
 
 
 def invert_mask(
-        mask,
-        threshold: int = DEFAULT_THRESHOLD,
+    mask,
+    threshold: int = DEFAULT_THRESHOLD,
 ):
     """Invert a mask (logical NOT).
 
@@ -257,7 +265,9 @@ def mask_iou(a, b, threshold: int = DEFAULT_THRESHOLD) -> float:
     a2 = binarize_mask(a, threshold=threshold)
     b2 = binarize_mask(b, threshold=threshold)
     if a2.shape != b2.shape:
-        raise ValueError(f"Masks must have the same shape, got: {a2.shape} vs {b2.shape}")
+        raise ValueError(
+            f"Masks must have the same shape, got: {a2.shape} vs {b2.shape}"
+        )
 
     inter = np.logical_and(a2, b2).sum(dtype=np.int64)
     union = np.logical_or(a2, b2).sum(dtype=np.int64)

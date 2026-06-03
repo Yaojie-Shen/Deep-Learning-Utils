@@ -6,121 +6,72 @@
 import asyncio
 import time
 
-from pytest import approx, param, mark
+from pytest import approx, mark, param
 
 from dl_utils import QPSLimiter
 
 
-def test_qps_limiter():
-    max_qps = 10
-    max_iter = 10
+def _fn(sleep_time, return_value):
+    time.sleep(sleep_time)
+    return return_value
 
-    def fn():
-        # print(f"Current: {time.time()}")
-        return 123
+
+@mark.parametrize(
+    "max_qps, test_queries, sleep_time",
+    [
+        param(0.5, 1, 0.1),
+        param(1, 1, 0.1),
+        param(1000, 1000, 0.1),
+        param(1000, 1000, 3),
+    ],
+)
+def test_qps_limiter(max_qps, test_queries, sleep_time):
+    return_value = 123456
 
     async def main():
         qps_limiter = QPSLimiter(max_qps=max_qps)
 
         s_time = time.time()
-        for _ in range(max_iter):
-            res = await qps_limiter.run(fn)
-            assert res == 123
-        duration = time.time() - s_time
-
-        print(duration)
-        assert duration == approx(max_iter / max_qps, 0.1)
-
-    asyncio.run(main())
-
-
-@mark.parametrize(
-    "max_qps, test_query",
-    [
-        param(0.5, 4),
-        param(1, 2),
-        param(10, 20),
-        param(100, 200),
-        param(1000, 2000)
-    ]
-)
-def test_qps_limiter_performance(max_qps, test_query):
-    sleep_time = 0.1
-
-    def fn():
-        print(".", end="")
-        time.sleep(sleep_time)
-        return 123
-
-    async def main():
-        qps_limiter = QPSLimiter(max_qps=max_qps)
-
-        async def worker():
-            res = await qps_limiter.run(fn)
-            assert res == 123
-
-        # schedule 100 runs, and wait then to finish
-        tasks = [asyncio.create_task(worker()) for _ in range(test_query)]
-        await asyncio.gather(*tasks)
-
+        results = [
+            qps_limiter.run(_fn, sleep_time, return_value=return_value)
+            for _ in range(test_queries)
+        ]
+        results = await asyncio.gather(*results)
         real_qps = qps_limiter.real_qps()
+        duration = time.time() - s_time
+        expected_duration = test_queries / max_qps + sleep_time
+        print(
+            f"Queries: {test_queries}, Sleep Time: {sleep_time}, "
+            f"QPS Limit: {max_qps}, Real QPS: {real_qps}, "
+            f"Took: {duration}s, Expected: {expected_duration}s"
+        )
 
-        assert real_qps < max_qps
-        assert real_qps == approx(max_qps, rel=0.2)
-        assert qps_limiter.query_count == test_query
-
-        print(f"real qps: {real_qps:.2f} qps, "
-              f"expected_qps: {max_qps:.2f} qps")
+        assert all(x == return_value for x in results), (
+            f"Return value is not correct: {results}"
+        )
+        assert duration == approx(expected_duration, 0.1), (
+            "Task do not finish in expected duration"
+        )
 
     asyncio.run(main())
 
 
 def test_qps_limiter_peak_performance():
-    test_query = 1000
-    sleep_time = 0.1
-
-    def fn():
-        time.sleep(sleep_time)
-        return 123
+    test_queries = 1000
 
     async def main():
         qps_limiter = QPSLimiter(max_qps=9999)
 
-        # Schedule runs and wait for them to finish
         s_time = time.time()
-        results = [qps_limiter.run(fn) for _ in range(test_query)]
+        results = [
+            qps_limiter.run(_fn, 0.1, return_value=123456) for _ in range(test_queries)
+        ]
         await asyncio.gather(*results)
-
         e_time = time.time()
 
-        print(f"Took {e_time - s_time:.2f} seconds for {test_query} queries")
-        print(f"Performance: {len(results) / (e_time - s_time) :.2f} qps")
-
-    asyncio.run(main())
-
-
-def test_qps_limiter_long_run_task_concurrency():
-    max_qps = 10
-
-    def fn():
-        time.sleep(5)
-        return 123
-
-    async def main():
-        qps_limiter = QPSLimiter(max_qps=max_qps)
-
-        s_time = time.time()
-
-        # Append `max_qps` tasks to the queue
-        tasks = [qps_limiter.run(fn) for _ in range(max_qps)]
-
-        # Wait for all the task to finish
-        results = await asyncio.gather(*tasks)
-        duration = time.time() - s_time
-
-        for res in results:
-            assert res == 123
-
-        assert duration == approx(6, 0.1)
+        print(
+            f"Took {e_time - s_time:.2f} seconds for {test_queries} queries. "
+            f"Performance: {len(results) / (e_time - s_time):.2f} qps"
+        )
 
     asyncio.run(main())

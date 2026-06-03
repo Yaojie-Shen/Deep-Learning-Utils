@@ -4,25 +4,20 @@
 # @Project : Deep-Learning-Utils
 # @File    : normalize.py
 
-__all__ = [
-    "normalize",
-    "inv_normalize",
-    "convert_image_video_range"
-]
+__all__ = ["normalize", "inv_normalize", "convert_image_video_range"]
+
+from typing import Tuple
 
 import numpy as np
 import torch
 
 from .. import to_numpy, to_tensor
-from ..type_hint import ArrayLike, Scalar, TorchOrNumpy
+from ..type_hint import ArrayLike, ArrayOrScalar, TorchOrNumpy
 
 
 def _prepare_mean_std(
-        mean: TorchOrNumpy,
-        std: TorchOrNumpy,
-        dim: int,
-        ndim: int
-) -> tuple[TorchOrNumpy, TorchOrNumpy]:
+    mean: TorchOrNumpy, std: TorchOrNumpy, dim: int, ndim: int
+) -> Tuple[TorchOrNumpy, TorchOrNumpy]:
     """A helper function to prepare mean and std for normalization.
     Reshape mean and std to broadcast along the specified dim
     """
@@ -42,17 +37,14 @@ def _inv_normalize(data, mean, std):
 
 
 def normalize(
-        data: ArrayLike,
-        mean: Scalar | ArrayLike,
-        std: Scalar | ArrayLike,
-        dim: int = -1
+    data: ArrayLike, mean: ArrayOrScalar, std: ArrayOrScalar, dim: int = -1
 ) -> ArrayLike:
     """Normalize the input array (usually image or video).
 
     Args:
         data: Input array, can be a NumPy array or a PyTorch tensor.
-        mean: Scalar or vector of means for each channel.
-        std: Scalar or vector of standard deviations for each channel.
+        mean: Numeric scalar or vector of means for each channel.
+        std: Numeric scalar or vector of standard deviations for each channel.
         dim: The channel dimension to normalize along. Default is -1 (last dimension).
 
     Returns:
@@ -90,18 +82,15 @@ def normalize(
 
 
 def inv_normalize(
-        data: ArrayLike,
-        mean: Scalar | ArrayLike,
-        std: Scalar | ArrayLike,
-        dim=-1
+    data: ArrayLike, mean: ArrayOrScalar, std: ArrayOrScalar, dim=-1
 ) -> ArrayLike:
     """Inverse normalize the input array (usually image or video).
 
     Args:
         data: Input array, can be a NumPy array or a PyTorch tensor,
               which has been previously normalized.
-        mean: Scalar or vector of means used in the original normalization.
-        std: Scalar or vector of standard deviations used in the original normalization.
+        mean: Numeric scalar or vector of means used in the original normalization.
+        std: Numeric scalar or vector of standard deviations used in the original normalization.
         dim: The channel dimension along which normalization was applied.
              Default is -1 (last dimension).
 
@@ -160,8 +149,9 @@ def convert_image_video_range(data: TorchOrNumpy, pattern: str):
     if in_spec not in RANGE_SPECS or out_spec not in RANGE_SPECS:
         raise ValueError(f"Unknown spec(s): {pattern}")
 
-    assert isinstance(data, (np.ndarray, torch.Tensor)), \
-        f"Data type \"{type(data)}\" is not supported, expected np.ndarray or torch.Tensor"
+    assert isinstance(data, (np.ndarray, torch.Tensor)), (
+        f'Data type "{type(data)}" is not supported, expected np.ndarray or torch.Tensor'
+    )
 
     in_dtype, in_low, in_high = RANGE_SPECS[in_spec]
     out_dtype, out_low, out_high = RANGE_SPECS[out_spec]
@@ -173,7 +163,9 @@ def convert_image_video_range(data: TorchOrNumpy, pattern: str):
         if isinstance(data, torch.Tensor):
             assert data.is_floating_point(), "Expected floating-point tensor"
         else:
-            assert np.issubdtype(data.dtype, np.floating), "Expected floating-point array"
+            assert np.issubdtype(data.dtype, np.floating), (
+                "Expected floating-point array"
+            )
     else:
         raise NotImplementedError(f"Unknown dtype: {in_dtype}")
 
@@ -183,7 +175,9 @@ def convert_image_video_range(data: TorchOrNumpy, pattern: str):
     if in_dtype == "uint8":
         if isinstance(data, torch.Tensor) and not data.is_floating_point():
             data = data.to(torch.float32)
-        elif isinstance(data, np.ndarray) and not np.issubdtype(data.dtype, np.floating):
+        elif isinstance(data, np.ndarray) and not np.issubdtype(
+            data.dtype, np.floating
+        ):
             data = data.astype(np.float32)
 
     _ratio = (out_high - out_low) / (in_high - in_low)
@@ -195,6 +189,10 @@ def convert_image_video_range(data: TorchOrNumpy, pattern: str):
 
     if out_dtype == "uint8":
         data = data.round().clip(0, 255)
-        return data.astype(np.uint8) if isinstance(data, np.ndarray) else data.to(torch.uint8)
+        return (
+            data.astype(np.uint8)
+            if isinstance(data, np.ndarray)
+            else data.to(torch.uint8)
+        )
     else:
         return data

@@ -18,10 +18,10 @@ __all__ = ["download"]
 
 # Modified from: https://github.com/openai/CLIP/blob/main/clip/clip.py
 def download(
-        url: str,
-        filepath: Optional[str] = None,
-        expected_sha256: Optional[str] = None,
-        cache_dir: str = "~/.cache/dl_utils",
+    url: str,
+    filepath: Optional[str] = None,
+    expected_sha256: Optional[str] = None,
+    cache_dir: str = "~/.cache/dl_utils",
 ):
     """
     Download file from URL to the given path in a multi-process safe way.
@@ -34,13 +34,15 @@ def download(
 
     Args:
         url: Download URL.
-        filepath: Path to save the file.
+        filepath: Path to save the file. If not provided, the file is saved under `cache_dir` with filename
+            `os.path.basename(url)`.
         expected_sha256: Expected SHA256 checksum.
-        cache_dir: Cache directory if filepath is not specified.
+        cache_dir: Cache directory if filepath is not specified. By default, it is `~/.cache/dl_utils`.
 
     Returns:
         Path to the downloaded file.
     """
+    # If `filepath` is not specified, download into `cache_dir` using the URL basename as filename.
     if filepath is None:
         filename = os.path.basename(url)
         filepath = os.path.join(os.path.expanduser(cache_dir), filename)
@@ -74,12 +76,12 @@ def download(
             total = int(total) if total is not None else None
 
             with tqdm(
-                    total=total,
-                    ncols=80,
-                    unit="iB",
-                    unit_scale=True,
-                    unit_divisor=1024,
-                    disable=total is None,
+                total=total,
+                ncols=80,
+                unit="iB",
+                unit_scale=True,
+                unit_divisor=1024,
+                disable=total is None,
             ) as pbar:
                 while True:
                     buffer = source.read(8192)

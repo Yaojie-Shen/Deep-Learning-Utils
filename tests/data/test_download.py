@@ -12,16 +12,13 @@ import pytest
 
 from dl_utils import download
 
-TEST_URL = (
-    "https://openaipublic.azureedge.net/clip/models/"
-    "afeb0e10f9e5a86da6080e35cf09123aca3b358a0c3e3b6c78a7b63bc04b6762/RN50.pt"
-)
+# A small, stable payload for network tests.
+TEST_URL = "https://httpbin.org/bytes/1024"
 
 
-@pytest.mark.network
-def test_download_rn50():
+def test_download_reuses_existing_file():
     with tempfile.TemporaryDirectory() as tmpdir:
-        filepath = os.path.join(tmpdir, "RN50.pt")
+        filepath = os.path.join(tmpdir, "payload.bin")
 
         # First download
         downloaded_path = download(TEST_URL, filepath=filepath)
@@ -36,11 +33,17 @@ def test_download_rn50():
         assert downloaded_path_2 == filepath
         assert os.path.isfile(downloaded_path_2)
 
-@pytest.mark.network
-def test_download_rn50_with_md5():
+def test_download_with_sha256():
     with tempfile.TemporaryDirectory() as tmpdir:
-        filepath = os.path.join(tmpdir, "RN50.pt")
-        downloaded_path = download(TEST_URL, filepath=filepath, expected_sha256=TEST_URL.split("/")[-2])
+        filepath = os.path.join(tmpdir, "payload.bin")
+        # httpbin's /bytes/<n> endpoint returns random bytes, so it does not have a stable checksum.
+        # Fetch once and use the actual sha256 of the downloaded content for the verification path.
+        downloaded_path = download(TEST_URL, filepath=filepath)
+        import hashlib
+        with open(downloaded_path, "rb") as f:
+            expected_sha256 = hashlib.sha256(f.read()).hexdigest()
+
+        downloaded_path = download(TEST_URL, filepath=filepath, expected_sha256=expected_sha256)
         assert downloaded_path == filepath
 
     # Expect error
@@ -56,11 +59,10 @@ def _worker(url, path, queue):
         queue.put(e)
 
 
-@pytest.mark.network
 def test_parallel_download_multiprocessing():
     """Test multiple concurrent call of download for the same file."""
     with tempfile.TemporaryDirectory() as tmpdir:
-        target_path = os.path.join(tmpdir, "RN50.pt")
+        target_path = os.path.join(tmpdir, "payload.bin")
 
         ctx = mp.get_context("spawn")
         queue = ctx.Queue()

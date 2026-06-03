@@ -4,15 +4,59 @@
 # @Project : Deep-Learning-Utils
 # @File    : ray_inference_utils.py
 
+import asyncio
 import logging
-import threading
-import time
-from queue import Empty, Queue
 from typing import Callable, List
 
 import ray
 
 logger = logging.getLogger(__name__)
+
+
+@ray.remote
+class _RayActorSchedulerActor:
+    """Ray-side scheduler.
+
+    - Driver-side `RayActorScheduler.submit()` returns an ObjectRef immediately
+      by calling this actor method.
+    - This actor method waits for an available actor token, dispatches the real
+      actor task via `actor_fn`, awaits its completion, and then returns the
+      actor token.
+
+    This keeps user experience identical to plain Ray actor calls:
+        ref = scheduler.submit(x)
+        out = ray.get(ref)
+    while avoiding driver-side blocking in `submit()`.
+    """
+
+    def __init__(
+        self,
+        actors: List[ray.actor.ActorHandle],
+        actor_fn: Callable[[ray.actor.ActorHandle, ...], ray.ObjectRef],
+        queue_max_size: int,
+    ):
+        self.actors = actors
+        self.actor_fn = actor_fn
+        self.queue_max_size = queue_max_size
+
+        self._actor_queue: asyncio.Queue[ray.actor.ActorHandle] = asyncio.Queue()
+        for _ in range(queue_max_size):
+            for a in actors:
+                self._actor_queue.put_nowait(a)
+
+    async def submit(self, *args, **kwargs):
+        actor = await self._actor_queue.get()
+        try:
+            obj_ref = self.actor_fn(actor, *args, **kwargs)
+            if not isinstance(obj_ref, ray.ObjectRef):
+                raise TypeError(
+                    "The actor_fn should return a ray.ObjectRef, "
+                    f"but got {type(obj_ref)}"
+                )
+            return await obj_ref
+        finally:
+            # Always return the token to keep load balancing working.
+            self._actor_queue.put_nowait(actor)
 
 
 class RayActorScheduler:
@@ -28,67 +72,32 @@ class RayActorScheduler:
             submitted task.
         queue_max_size: Token bucket size per actor. Effectively caps the
             number of in-flight tasks allowed per actor to this value.
+        scheduler_max_concurrency: Concurrency for internal Ray scheduler actor.
     """
 
     def __init__(
         self,
         actors: List[ray.actor.ActorHandle],
         actor_fn: Callable[[ray.actor.ActorHandle, ...], ray.ObjectRef],
-        queue_max_size: int = 4,
+        queue_max_size: int = 2,
     ):
-        self.actors = actors
-        self.actor_fn = actor_fn
-        self.queue_max_size = queue_max_size
-        self.actor_queue = Queue()
-        self.pending_ref_queue = Queue()  # Submit task to the monitor thread
-        self.active_refs = {}  # Use to store the active tasks in monitor thread
-        self._lock = threading.Lock()
-        self._stop_event = threading.Event()
-
-        # Initialize token bucket
-        for _ in range(queue_max_size):
-            for actor in actors:
-                self.actor_queue.put(actor)
-
-        # Monitor task status in background to add token back to the bucket
-        self._monitor_thread = threading.Thread(
-            target=self._background_monitor, daemon=True
+        assert actors and all(isinstance(a, ray.actor.ActorHandle) for a in actors), (
+            "actors must be a non-empty list of Ray actor handles"
         )
-        self._monitor_thread.start()
+        assert queue_max_size > 0 and isinstance(queue_max_size, int), (
+            "queue_max_size must be a positive integer"
+        )
+
+        # A single Ray actor does both dispatching and monitoring.
+        # submit() on driver returns immediately.
+        self._scheduler_actor = _RayActorSchedulerActor.options(
+            max_concurrency=queue_max_size
+            * len(actors)
+            * 2  # Allow some extra concurrency for waiting
+        ).remote(actors=actors, actor_fn=actor_fn, queue_max_size=queue_max_size)
 
     def submit(self, *args, **kwargs):
-        s_time = time.time()
-        actor = self.actor_queue.get()  # wait for available actor
-        obj_ref = self.actor_fn(actor, *args, **kwargs)
-        assert isinstance(obj_ref, ray.ObjectRef), (
-            f"The actor_fn should return a ray.ObjectRef, but got {type(obj_ref)}"
-        )
-        self.pending_ref_queue.put((obj_ref, actor))
-        logger.debug(f"Schedule task took {time.time() - s_time:.6f}s")
-        return obj_ref
-
-    def _background_monitor(self):
-        while not self._stop_event.is_set():
-            # move all task from queue into active_refs
-            try:
-                while True:
-                    obj_ref, actor = self.pending_ref_queue.get_nowait()
-                    self.active_refs[obj_ref] = actor
-            except Empty:
-                pass
-
-            if self.active_refs:
-                ready_refs, _ = ray.wait(
-                    list(self.active_refs.keys()), num_returns=1, timeout=0.001
-                )
-                for ref in ready_refs:
-                    actor = self.active_refs.pop(ref, None)
-                    if actor:
-                        self.actor_queue.put(actor)
-
-    def shutdown(self):
-        self._stop_event.set()
-        self._monitor_thread.join()
+        return self._scheduler_actor.submit.remote(*args, **kwargs)
 
 
 __all__ = ["RayActorScheduler"]

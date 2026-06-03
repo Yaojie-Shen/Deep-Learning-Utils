@@ -6,7 +6,7 @@
 
 import os
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Union, List
+from typing import List, Union
 
 
 def list_files(path: str, depth: Union[int, None] = None) -> List[str]:
@@ -52,7 +52,9 @@ def list_files_multithread(directory, n_jobs=16, depth: Union[int, None] = None)
     results = []
     with ThreadPoolExecutor(max_workers=n_jobs) as executor:
         futures = {
-            executor.submit(list_files, os.path.join(directory, entry), depth=next_depth): entry
+            executor.submit(
+                list_files, os.path.join(directory, entry), depth=next_depth
+            ): entry
             for entry in entries
         }
         for future in as_completed(futures):

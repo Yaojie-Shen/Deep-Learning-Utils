@@ -77,7 +77,9 @@ class MemoryStats:
         return msg
 
 
-def get_gpu_memory_state(device: torch.device | None = None, sync: bool = True) -> float | None:
+def get_gpu_memory_state(
+    device: torch.device | None = None, sync: bool = True
+) -> float | None:
     """Get current GPU memory state.
 
     Args:
@@ -118,11 +120,11 @@ def gc_and_empty_cache():
 
 @contextmanager
 def measure_memory(
-        tag: str = "",
-        device: torch.device | None = None,
-        sync: bool = True,
-        verbose: bool = True,
-        report_cpu: bool = True,
+    tag: str = "",
+    device: torch.device | None = None,
+    sync: bool = True,
+    verbose: bool = True,
+    report_cpu: bool = True,
 ):
     """
     Context manager to measure GPU/CPU memory usage during a code block.
@@ -146,11 +148,11 @@ def measure_memory(
 
     stats = MemoryStats(
         tag=tag,
-        gpu_before_mb=gpu_before / 1024 ** 2 if gpu_before is not None else None,
+        gpu_before_mb=gpu_before / 1024**2 if gpu_before is not None else None,
         gpu_after_mb=0,
-        cpu_before_mb=cpu_before / 1024 ** 2 if cpu_before is not None else None,
+        cpu_before_mb=cpu_before / 1024**2 if cpu_before is not None else None,
         cpu_after_mb=0,
-        elapsed_s=0
+        elapsed_s=0,
     )
 
     try:
@@ -160,8 +162,8 @@ def measure_memory(
         cpu_after = get_cpu_memory_state() if report_cpu else None
         elapsed = time.time() - start_time
 
-        stats.gpu_after_mb = gpu_after / 1024 ** 2 if gpu_after is not None else None
-        stats.cpu_after_mb = cpu_after / 1024 ** 2 if cpu_after is not None else None
+        stats.gpu_after_mb = gpu_after / 1024**2 if gpu_after is not None else None
+        stats.cpu_after_mb = cpu_after / 1024**2 if cpu_after is not None else None
         stats.elapsed_s = elapsed
 
         if verbose:

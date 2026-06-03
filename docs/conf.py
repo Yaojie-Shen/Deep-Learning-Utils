@@ -6,10 +6,10 @@
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
-project = 'dl-utils'
-copyright = '2025, Yaojie Shen'
-author = 'Yaojie Shen'
-release = 'https://github.com/AcherStyx/Deep-Learning-Utils'
+project = "dl-utils"
+copyright = "2025, Yaojie Shen"
+author = "Yaojie Shen"
+release = "https://github.com/AcherStyx/Deep-Learning-Utils"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
@@ -19,7 +19,7 @@ extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
     "sphinx.ext.viewcode",
-    "sphinxcontrib.programoutput"
+    "sphinxcontrib.programoutput",
 ]
 
 
@@ -32,23 +32,32 @@ _REPO_ROOT = os.path.abspath(os.path.join(_DOCS_DIR, ".."))
 if _REPO_ROOT not in sys.path:
     sys.path.insert(0, _REPO_ROOT)
 
-templates_path = ['_templates']
-exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
-
+templates_path = ["_templates"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
-html_theme = 'sphinx_rtd_theme'
-html_static_path = ['_static']
+html_theme = "sphinx_rtd_theme"
+html_static_path = ["_static"]
+
+# Site icon (favicon)
+html_favicon = "_static/toolbox.svg"
 
 
-
-autodoc_member_order = 'bysource'
+autodoc_member_order = "bysource"
 
 autodoc_default_options = {
     "members": True,
     "undoc-members": True,
     "show-inheritance": True,
 }
+
+# Some modules depend on optional extras (e.g. ray). We still want their
+# API docs to render even when these extras are not installed in the doc build
+# environment.
+autodoc_mock_imports = [
+    "ray",
+    "ollama",
+]
