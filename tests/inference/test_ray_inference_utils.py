@@ -11,7 +11,8 @@ import pytest
 
 ray = pytest.importorskip("ray")
 
-from dl_utils.inference.ray_inference_utils import RayActorScheduler
+
+from dl_utils import RayActorScheduler, RayActorSchedulerWrapper  # noqa: E402
 
 
 @ray.remote
@@ -73,5 +74,62 @@ def test_scheduler_balances_load():
         assert schdule_count[10] == 1, (
             f"Slow worker should process 1 task, but processed {schdule_count[10]}"
         )
+    finally:
+        ray.shutdown()
+
+
+def test_scheduler_wrapper_supports_actor_like_remote_calls():
+    ray.init(ignore_reinit_error=True)
+
+    try:
+        actors = [Worker.remote(idx, 0.0) for idx in range(2)]
+        wrapper = RayActorSchedulerWrapper(actors, queue_max_size=1)
+
+        ray.get([a.__ray_ready__.remote() for a in actors])
+        ray.get(wrapper._scheduler._scheduler_actor.__ray_ready__.remote())
+
+        refs = [wrapper.process.remote(i) for i in range(8)]
+        results = ray.get(refs)
+
+        assert [x for x, _ in results] == list(range(8))
+        assert {worker_idx for _, worker_idx in results}.issubset({0, 1})
+    finally:
+        ray.shutdown()
+
+
+def test_scheduler_wrapper_supports_direct_call_alias():
+    ray.init(ignore_reinit_error=True)
+
+    try:
+        actors = [Worker.remote(idx, 0.0) for idx in range(2)]
+        wrapper = RayActorSchedulerWrapper(actors, queue_max_size=1)
+
+        ray.get([a.__ray_ready__.remote() for a in actors])
+        ray.get(wrapper._scheduler._scheduler_actor.__ray_ready__.remote())
+
+        refs = [wrapper.process(i) for i in range(8)]
+        results = ray.get(refs)
+
+        assert [x for x, _ in results] == list(range(8))
+        assert {worker_idx for _, worker_idx in results}.issubset({0, 1})
+    finally:
+        ray.shutdown()
+
+
+def test_scheduler_wrapper_resolves_missing_methods_lazily():
+    ray.init(ignore_reinit_error=True)
+
+    try:
+        actors = [Worker.remote(0, 0.0)]
+        wrapper = RayActorSchedulerWrapper(actors, queue_max_size=1)
+
+        ray.get([a.__ray_ready__.remote() for a in actors])
+        ray.get(wrapper._scheduler._scheduler_actor.__ray_ready__.remote())
+
+        ref = wrapper.missing_method.remote(1)
+
+        assert isinstance(ref, ray.ObjectRef)
+        with pytest.raises(Exception):
+            ray.get(ref)
     finally:
         ray.shutdown()
