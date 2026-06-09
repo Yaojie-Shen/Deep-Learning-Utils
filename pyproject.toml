@@ -36,6 +36,7 @@ docs = [
     "myst-parser",
     "sphinx-rtd-theme",
     "sphinxcontrib-programoutput",
+    "sphinx-autobuild"
 ]
 
 [project.urls]
